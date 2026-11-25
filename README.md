@@ -10,9 +10,12 @@ An interactive study companion for QA and SDET interviews. It includes 149 quest
 - Start a five-question practice session from the selected study path and get a recap.
 - Resume the last question and study path from the homepage.
 - Review missed questions after one day. Successful reviews are scheduled at intervals of up to 30 days.
+- Write and self-check guided answers for CI-only failures, API assertions, and regression planning.
 - Use timed or untimed mocks, answer the follow-up, then reveal the rubric. Optional notes stay in the open mock.
 - Revisit completed mock scores and add questions with missed rubric items to review.
 - [Run the flaky save lab](lab/) with a starter test and reference solution.
+- [Run the API persistence lab](lab/api/) or practise a manual checkout release case on the site.
+- Use Progress to see self-ratings by topic, first and latest mock scores, and a suggested next task.
 - Study progress and completed mock scores are saved in the current browser.
 
 ## Run locally

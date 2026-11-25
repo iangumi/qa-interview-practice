@@ -19,7 +19,8 @@
         <a href="#practice" id="nav-practice">Practice</a>
         <a href="#browse" id="nav-browse">Browse</a>
         <a href="#mocks" id="nav-mocks">Mock interviews</a>
-        <a href="#lab" id="nav-lab">QA lab</a>
+        <a href="#lab" id="nav-lab">QA labs</a>
+        <a href="#progress" id="nav-progress">Progress</a>
       </nav>
       <a class="repo-link" href="https://github.com/iangumi/qa-interview-practice">GitHub <span aria-hidden="true">↗</span></a>
     </div>
@@ -42,7 +43,7 @@
         <div id="tracks" class="track-list" aria-label="Study paths"></div>
         <div class="progress-block">
           <div class="progress-heading"><h2>Progress</h2><span id="percentage"></span></div>
-          <progress id="progress" aria-label="Questions reviewed"></progress>
+          <progress id="study-meter" aria-label="Questions reviewed"></progress>
           <p id="progress-summary"></p>
           <button id="review-queue" class="text-button" type="button" aria-pressed="false">Review marked questions</button>
           <button id="due-queue" class="text-button" type="button" aria-pressed="false">Due for review</button>
@@ -106,8 +107,22 @@
       <p class="intro">Pick a role, answer four prompts aloud, then score yourself using the rubric. Each session takes about 30 minutes.</p>
       <div id="mock-content"></div>
     </section>
-    <section id="lab" class="mock-workspace" aria-labelledby="lab-heading" hidden>
-      <h1 id="lab-heading">Debug a flaky save test</h1>
+    <section id="progress-panel" class="mock-workspace" aria-labelledby="progress-page-heading" hidden>
+      <h1 id="progress-page-heading">Study progress</h1>
+      <p class="intro">Use your self-ratings and mock scores to choose what to practise next.</p>
+      <label class="progress-path">Study path <select id="progress-track"></select></label>
+      <div id="readiness-content"></div>
+    </section>
+    <section id="lab-panel" class="mock-workspace" aria-labelledby="labs-heading" hidden>
+      <h1 id="labs-heading">Hands-on QA labs</h1>
+      <p class="intro">Practise diagnosing a flaky test, checking API side effects, or making a release recommendation.</p>
+      <div class="lab-switch" aria-label="Choose a lab">
+        <a href="#lab">Flaky save test</a>
+        <a href="#lab-api">API validation</a>
+        <a href="#lab-manual">Manual QA case</a>
+      </div>
+      <div id="lab-flaky-panel">
+      <h2 id="lab-heading">Debug a flaky save test</h2>
       <p class="intro">A profile saves in the browser, but the automation sometimes reads its status too early. Diagnose the failure, fix the test, and explain how you would verify your change in CI.</p>
       <article class="question-card lab-card">
         <h2>Reproduce the failure</h2>
@@ -147,6 +162,54 @@ Received: "Saving…"
         </details>
         <p class="lab-source"><a href="https://github.com/iangumi/qa-interview-practice/tree/main/lab">Run the starter and reference solution on GitHub ↗</a></p>
       </article>
+      </div>
+      <div id="lab-api-panel" hidden>
+        <h2 id="lab-api-heading">Catch an order that never saved</h2>
+        <article class="question-card lab-card">
+          <p>The create-order endpoint returns 201 and an order ID. Standard orders can be retrieved immediately. Express orders return the same success response, but the record is missing.</p>
+          <h3>Your deliverable</h3>
+          <ol>
+            <li>Write a test that checks the creation response and retrieves the order by the returned ID.</li>
+            <li>Assert the stored item, quantity, and delivery method. Run the same check for standard and express orders.</li>
+            <li>Record which call disagrees with the contract and the observed status.</li>
+          </ol>
+          <details>
+            <summary>Hint</summary>
+            <p>The create response can echo fields even when the write is lost. Make a separate GET request.</p>
+          </details>
+          <details>
+            <summary>Reference solution</summary>
+            <p>Assert 201 and the response fields on POST, then assert 200 and matching values on GET. The express GET returns 404 on the buggy fixture. Run the same tests against the fixed fixture to show that both cases pass.</p>
+          </details>
+          <p class="lab-source"><a href="https://github.com/iangumi/qa-interview-practice/tree/main/lab/api">Run the API starter and solution on GitHub</a></p>
+        </article>
+      </div>
+      <div id="lab-manual-panel" hidden>
+        <h2 id="lab-manual-heading">Make a checkout release recommendation</h2>
+        <article class="question-card lab-card">
+          <p>You have 45 minutes before a checkout release. A new retry button appears after payment times out. The requirement calls for at most one charge and one confirmed order per checkout. The payment sandbox can simulate a decline or a late approval.</p>
+          <h3>Your deliverable</h3>
+          <ol>
+            <li>Write three test cases with preconditions, actions, and observable expected results.</li>
+            <li>Assume a retry succeeded once after a decline, but the late-approval case could not be run. Write a two-sentence release recommendation that names the gap, its impact, and the evidence you need.</li>
+            <li>Choose one check to automate and explain which layer should own it.</li>
+          </ol>
+          <details>
+            <summary>Hint</summary>
+            <p>A successful screen can hide a duplicate charge. List what you would verify in the order record and payment sandbox, and identify which outcome must stay consistent after retry.</p>
+          </details>
+          <details>
+            <summary>Example test plan and release recommendation</summary>
+            <ul>
+              <li><strong>Happy path.</strong> Submit once with an approving payment. Verify one charge and one confirmed order, with the same amount in the confirmation and payment record.</li>
+              <li><strong>Decline and retry.</strong> Decline the first attempt, confirm that it creates no charge or confirmed order, then retry with approval and verify exactly one of each.</li>
+              <li><strong>Late approval.</strong> Delay the first approval past the UI timeout and select Retry. Reconcile both attempts after the late response and verify at most one charge and one confirmed order.</li>
+            </ul>
+            <p>I’d recommend holding the retry change or keeping it disabled until we verify the late-approval case because a delayed first response could lead to duplicate charges. I’d ask the release owner to revisit that decision after the sandbox shows one charge and one order for the original checkout.</p>
+            <p>Automate the duplicate-charge check at the service boundary with a controlled payment sandbox. Keep a UI check for whether the retry controls and status messages make sense to the customer.</p>
+          </details>
+        </article>
+      </div>
     </section>
     <noscript><p class="noscript">Enable JavaScript to open the practice questions and mock interviews.</p></noscript>
   </main>

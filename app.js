@@ -1,5 +1,6 @@
 import { questions, topics, tracks, mocks, references } from "./bank.js";
 import { relatedGroups, shortAnswers } from "./answer-guide.js";
+import { guidedAnswers } from "./guided-answers.js";
 
 const el = id => document.getElementById(id);
 const questionLabel = id => "Q" + String(id).padStart(3, "0");
@@ -7,6 +8,8 @@ const key = "qa-interview-practice.progress.v1";
 const mockKey = "qa-interview-practice.mocks.v1";
 const reviewKey = "qa-interview-practice.review.v1";
 const resumeKey = "qa-interview-practice.resume.v1";
+const guidedKey = "qa-interview-practice.guided.v1";
+const firstMockKey = "qa-interview-practice.first-mock.v1";
 const day = 24 * 60 * 60 * 1000;
 const reviewIntervals = [3, 7, 14, 30];
 const grades = ["Got it", "Needs review", "Skipped"];
@@ -44,12 +47,25 @@ const schedule = Object.fromEntries(Object.entries(readLocal(reviewKey) ?? {}).f
 ));
 let resume = readLocal(resumeKey);
 const mockHistory = readMockHistory();
+const guidedResults = Object.fromEntries(Object.entries(readLocal(guidedKey) ?? {}).filter(
+  ([id, score]) => Object.hasOwn(guidedAnswers, id) && Number.isInteger(score) && score >= 0 && score <= guidedAnswers[id].criteria.length
+));
+const savedFirstMockScores = readLocal(firstMockKey);
+const firstMockScores = Object.fromEntries(mocks.flatMap(mock => {
+  const stored = savedFirstMockScores?.[mock.id];
+  const earliest = mockHistory.findLast(result => result.mockId === mock.id);
+  const max = mock.questions.reduce((total, item) => total + item.criteria.length, 0);
+  if (Number.isInteger(stored) && stored >= 0 && stored <= max) return [[mock.id, stored]];
+  return earliest ? [[mock.id, countPoints(earliest.scores)]] : [];
+}));
+const guidedDrafts = new Map();
 let selectedTrack = tracks[0];
 let reviewFilter = "";
 let currentId = questions[0].id;
 let visibleQuestions = [];
 let answerVisible = false;
 let storageAvailable = true;
+if (Object.keys(firstMockScores).length) saveLocal(firstMockKey, firstMockScores);
 let quickSession = null;
 let attempt = null;
 let timerInterval = 0;
@@ -84,6 +100,10 @@ topicSelect.append(option("", "All topics"), ...topics.map(topic => option(topic
 el("mobile-track").append(...tracks.map(track => option(track.id, track.name)));
 el("browse-track").append(...tracks.map(track => option(track.id, track.name)));
 el("browse-topic").append(option("", "All topics"), ...topics.map(topic => option(topic, topic)));
+el("progress-track").append(...tracks.filter(track => track.id !== "all").map(track => option(track.id, track.name)));
+const lastTrack = resumeTrack();
+el("progress-track").value = lastTrack?.numbers ? lastTrack.id : "fundamentals";
+el("progress-track").addEventListener("change", renderReadiness);
 for (const track of tracks) {
   const control = button(track.name, () => selectTrack(track));
   control.dataset.track = track.id;
@@ -242,8 +262,8 @@ function renderProgress() {
   const due = ids.filter(id => isDue(id)).length;
   const percent = Math.round(seen * 100 / ids.length);
   el("percentage").textContent = percent + "%";
-  el("progress").max = ids.length;
-  el("progress").value = seen;
+  el("study-meter").max = ids.length;
+  el("study-meter").value = seen;
   const scope = seen + " of " + ids.length + " questions marked";
   el("progress-summary").textContent = storageAvailable ? scope : scope + ". Progress is available for this session.";
   for (const id of ["review-queue", "mobile-review"]) {
@@ -371,6 +391,89 @@ function renderAnswer(question, answer) {
   }
 }
 
+function renderGuidedQuestion(id) {
+  const guide = guidedAnswers[id];
+  const section = element("section", undefined, "guided-panel");
+  const state = guidedDrafts.get(id) ?? { text: "", previous: "", comparing: false, checked: [] };
+  guidedDrafts.set(id, state);
+
+  function render(focus = false) {
+    const heading = element("h3", state.comparing ? "Compare your answer" : "Write a practice answer");
+    heading.tabIndex = -1;
+    section.replaceChildren(heading);
+    if (!state.comparing) {
+      if (state.previous) {
+        const previous = element("details", undefined, "answer-details");
+        previous.append(element("summary", "Read your previous attempt"), element("p", state.previous, "written-answer"));
+        section.append(previous);
+      }
+      const label = element("label", "Your answer");
+      const input = element("textarea");
+      input.rows = 5;
+      input.maxLength = 2000;
+      input.id = "guided-answer-input";
+      label.htmlFor = input.id;
+      input.value = state.text;
+      const compare = button("Compare with checklist", () => {
+        state.comparing = true;
+        render(true);
+      }, "primary");
+      compare.disabled = !state.text.trim();
+      input.addEventListener("input", () => {
+        state.text = input.value;
+        compare.disabled = !input.value.trim();
+      });
+      const draft = element("div", undefined, "guided-draft");
+      draft.append(label, input, element("small", "Your writing stays on this page. Only your self-check score is saved."));
+      section.append(draft, compare);
+    } else {
+      section.append(element("h4", "Your attempt"), element("p", state.text.trim(), "written-answer"),
+        element("h4", "Example answer"), element("p", guide.example));
+      const checklist = element("fieldset", undefined, "rubric guided-rubric");
+      checklist.append(element("legend", "Check what you covered"));
+      const saved = element("p", undefined, "self-check-status");
+      saved.setAttribute("role", "status");
+      for (const [i, [title, detail]] of guide.criteria.entries()) {
+        const row = element("label");
+        const check = element("input");
+        check.type = "checkbox";
+        check.checked = Boolean(state.checked[i]);
+        check.addEventListener("change", () => {
+          state.checked[i] = check.checked;
+          saved.textContent = "";
+        });
+        const item = element("span");
+        item.append(element("strong", title), element("small", detail));
+        row.append(check, item);
+        checklist.append(row);
+      }
+      function saveSelfCheck() {
+        const score = state.checked.filter(Boolean).length;
+        guidedResults[id] = score;
+        saveLocal(guidedKey, guidedResults);
+        saved.textContent = (storageAvailable ? "Self-check saved" : "Self-check for this visit") + " · " +
+          score + "/" + guide.criteria.length;
+      }
+      const actions = element("div", undefined, "card-actions");
+      actions.append(button("Save self-check", saveSelfCheck, "primary"), button("Try again", () => {
+        saveSelfCheck();
+        state.previous = state.text.trim();
+        state.text = "";
+        state.comparing = false;
+        state.checked = [];
+        render(true);
+      }));
+      section.append(checklist, actions, saved);
+    }
+    if (focus) heading.focus();
+  }
+  render();
+  const disclosure = element("details", undefined, "guided-practice");
+  disclosure.open = state.comparing || Boolean(state.text || state.previous);
+  disclosure.append(element("summary", "Try a guided answer"), section);
+  return disclosure;
+}
+
 function renderQuestion(focus = false) {
   questionCard.setAttribute("aria-labelledby", "question-title");
   const question = byId.get(currentId);
@@ -414,6 +517,7 @@ function renderQuestion(focus = false) {
   answer.id = "answer-content";
   answer.hidden = !answerVisible;
   questionCard.replaceChildren(meta, heading, reveal, answer);
+  if (guidedAnswers[question.id]) questionCard.append(renderGuidedQuestion(question.id));
   if (answerVisible) {
     renderAnswer(question, answer);
     const actions = element("div", undefined, "card-actions");
@@ -511,6 +615,10 @@ function saveMock() {
     scores: attempt.answers.map(answer => [...answer.scores]),
   };
   attempt.result = result;
+  if (!Object.hasOwn(firstMockScores, result.mockId)) {
+    firstMockScores[result.mockId] = countPoints(result.scores);
+    saveLocal(firstMockKey, firstMockScores);
+  }
   mockHistory.unshift(result);
   mockHistory.splice(20);
   try {
@@ -735,21 +843,111 @@ function renderHome() {
   el("home-due").textContent = due + (due === 1 ? " question due for review" : " questions due for review");
 }
 
+function renderReadiness() {
+  const track = tracks.find(track => track.id === el("progress-track").value);
+  const ids = track.numbers;
+  const due = ids.find(id => isDue(id));
+  const unseen = ids.find(id => !progress[id]);
+  const marked = ids.find(id => progress[id] === "review");
+  const guide = ids.find(id => guidedAnswers[id] && !Object.hasOwn(guidedResults, id));
+  const mock = mocks.find(mock => mock.id === track.id);
+  const results = mockHistory.filter(result => result.mockId === mock?.id);
+  const latest = results[0];
+  const recurring = mock ? mock.questions.flatMap((item, q) =>
+    item.criteria.map((criterion, c) => ({
+      id: item.id,
+      criterion,
+      count: results.filter(result => !result.scores[q][c]).length,
+    })).filter(item => item.count >= 2)
+  ).sort((a, b) => b.count - a.count) : [];
+  const next = element("article", undefined, "question-card readiness-card");
+  next.append(element("h2", "Next practice"));
+  if (recurring.length || due || guide || unseen || marked) {
+    const id = recurring[0]?.id ?? due ?? guide ?? unseen ?? marked;
+    const reason = recurring.length ? "Revisit a criterion missed in multiple mocks." :
+      due ? "Answer a question due for review." : guide ? "Write an answer and compare it with the checklist." :
+      unseen ? "Try an unseen question on this path." : "Revisit a question you marked for review.";
+    const link = element("p");
+    link.append(studyLink(id));
+    next.append(element("p", reason), link);
+  } else if (mock && !latest) {
+    const link = element("a", "Take the " + mock.name + " mock");
+    link.href = "#mocks";
+    next.append(link);
+  } else {
+    const link = element("a", "Practise a hands-on QA lab");
+    link.href = "#lab";
+    next.append(link);
+  }
+
+  const topicCard = element("article", undefined, "question-card readiness-card");
+  topicCard.append(element("h2", "Self-ratings by topic"));
+  const topicList = element("ul", undefined, "topic-ratings");
+  for (const topic of new Set(ids.map(id => byId.get(id).topic))) {
+    const topicIds = ids.filter(id => byId.get(id).topic === topic);
+    const confident = topicIds.filter(id => progress[id] === "got-it").length;
+    const seen = topicIds.filter(id => progress[id]).length;
+    const dueCount = topicIds.filter(id => isDue(id)).length;
+    const row = element("li");
+    row.append(element("strong", topic), element("span",
+      confident + "/" + topicIds.length + " got it · " + seen + " rated · " + dueCount + " due"));
+    topicList.append(row);
+  }
+  topicCard.append(topicList);
+
+  const guidedCard = element("article", undefined, "question-card readiness-card");
+  guidedCard.append(element("h2", "Guided answers"));
+  const guidedList = element("ul", undefined, "study-links");
+  for (const id of Object.keys(guidedAnswers).map(Number)) {
+    const row = element("li");
+    row.append(studyLink(id), Object.hasOwn(guidedResults, id) ?
+      " · Self-check " + guidedResults[id] + "/" + guidedAnswers[id].criteria.length : "");
+    guidedList.append(row);
+  }
+  guidedCard.append(guidedList);
+
+  const mockCard = element("article", undefined, "question-card readiness-card");
+  mockCard.append(element("h2", "Mock scores"));
+  if (latest) {
+    const max = latest.scores.flat().length;
+    mockCard.append(element("p", "First recorded score " + firstMockScores[mock.id] + "/" + max +
+      " · Latest score " + countPoints(latest.scores) + "/" + max));
+    if (recurring.length) {
+      const list = element("ul", undefined, "study-links");
+      for (const item of recurring) {
+        const row = element("li", item.criterion.charAt(0).toUpperCase() + item.criterion.slice(1) + " · Missed " + item.count + " times. ");
+        const link = studyLink(item.id, true);
+        row.append(link);
+        list.append(row);
+      }
+      mockCard.append(element("h3", "Recurring missed criteria"), list);
+    } else {
+      mockCard.append(element("p", "No criteria missed more than once in your recent attempts."));
+    }
+  } else {
+    mockCard.append(element("p", mock ? "Complete this path’s mock interview to see a baseline." :
+      "Choose a role-based path for its mock scores."));
+  }
+  el("readiness-content").replaceChildren(next, topicCard, mockCard, guidedCard);
+}
+
 function followLocation(focus = false) {
   const route = location.hash;
   const homeMode = route === "" || route === "#home";
   const mockMode = route === "#mocks";
-  const labMode = route === "#lab";
+  const labPanel = { "#lab": "flaky", "#lab-api": "api", "#lab-manual": "manual" }[route];
+  const progressMode = route === "#progress";
   const browseMode = route === "#browse";
   const qMatch = route.match(/^#q-(\d+)$/);
   const startTrack = route.startsWith("#start-") && tracks.find(track => track.id === route.slice(7));
   const returning = route === "#resume" && resumeTrack();
   el("home-panel").hidden = !homeMode;
-  el("practice").hidden = homeMode || mockMode || labMode || browseMode;
+  el("practice").hidden = homeMode || mockMode || Boolean(labPanel) || browseMode || progressMode;
   el("mocks").hidden = !mockMode;
-  el("lab").hidden = !labMode;
+  el("lab-panel").hidden = !labPanel;
+  el("progress-panel").hidden = !progressMode;
   el("browse-panel").hidden = !browseMode;
-  const activeNav = homeMode ? "home" : browseMode ? "browse" : mockMode ? "mocks" : labMode ? "lab" : "practice";
+  const activeNav = homeMode ? "home" : browseMode ? "browse" : mockMode ? "mocks" : labPanel ? "lab" : progressMode ? "progress" : "practice";
   for (const nav of document.querySelectorAll(".site-header nav a")) {
     if (nav.id === "nav-" + activeNav) nav.setAttribute("aria-current", "page");
     else nav.removeAttribute("aria-current");
@@ -772,10 +970,22 @@ function followLocation(focus = false) {
       el("browse-heading").tabIndex = -1;
       el("browse-heading").focus();
     }
-  } else if (labMode) {
+  } else if (progressMode) {
+    renderReadiness();
     if (focus) {
-      el("lab-heading").tabIndex = -1;
-      el("lab-heading").focus();
+      el("progress-page-heading").tabIndex = -1;
+      el("progress-page-heading").focus();
+    }
+  } else if (labPanel) {
+    for (const id of ["flaky", "api", "manual"]) el("lab-" + id + "-panel").hidden = id !== labPanel;
+    for (const link of el("lab-panel").querySelectorAll(".lab-switch a")) {
+      if (link.hash === route) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    }
+    if (focus) {
+      const heading = el(labPanel === "flaky" ? "lab-heading" : "lab-" + labPanel + "-heading");
+      heading.tabIndex = -1;
+      heading.focus();
     }
   } else if (startTrack || returning || route === "#due") {
     history.replaceState(null, "", "#practice");

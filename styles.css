@@ -116,6 +116,17 @@ h1 { font-size: clamp(2.35rem, 5.2vw, 4.5rem); line-height: .99; margin: 0; lett
 .answer h3 { font-size: 1rem; margin: 13px 0 0; }
 .answer-details { margin-top: 12px; }
 .answer-details summary { cursor: pointer; padding-block: 5px; color: var(--green); font-weight: 700; }
+.guided-practice { margin-top: 18px; border-top: 1px solid var(--line); }
+.guided-practice > summary { cursor: pointer; color: var(--green); font-weight: 700; padding-top: 14px; }
+.guided-panel h3, .guided-panel h4 { margin: 15px 0 6px; }
+.guided-panel p { line-height: 1.55; }
+.guided-draft { display: grid; gap: 8px; margin: 12px 0; }
+.guided-draft textarea { width: 100%; resize: vertical; }
+.guided-draft small, .guided-rubric small { color: var(--muted); }
+.guided-rubric small, .guided-rubric strong { display: block; line-height: 1.4; }
+.guided-rubric label + label { margin-top: 10px; }
+.written-answer { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--warm); padding: 12px; border-radius: 8px; }
+.self-check-status:empty { display: none; }
 .answer pre { font-size: .875rem; max-width: 100%; overflow: auto; padding: 13px; background: var(--warm); border-radius: 7px; }
 .answer pre:focus { outline-offset: 2px; }
 .references { margin: 25px 0 0; color: var(--muted); font-size: .94rem; }
@@ -152,12 +163,22 @@ input[type="checkbox"] { min-height: auto; padding: 0; accent-color: var(--green
 .lab-card ol { padding-left: 1.4rem; }
 .lab-card li + li { margin-top: 6px; }
 .lab-card .lab-source { margin: 18px 0 0; }
+.lab-switch { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+.lab-switch a { padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; text-decoration: none; }
+.lab-switch a[aria-current="page"] { background: var(--green-soft); font-weight: 700; }
+.progress-path { display: grid; gap: 6px; max-width: 320px; margin-bottom: 16px; font-weight: 700; }
+.readiness-card + .readiness-card { margin-top: 14px; }
+.readiness-card p, .topic-ratings { line-height: 1.5; }
+.topic-ratings { list-style: none; padding: 0; margin-bottom: 0; }
+.topic-ratings li { display: flex; flex-wrap: wrap; gap: 3px 16px; justify-content: space-between; padding: 9px 0; border-top: 1px solid var(--line); }
+.topic-ratings span { color: var(--muted); }
 footer { border-top: 1px solid var(--line); padding: 20px 32px; display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .85rem; }
 .noscript { margin: 30px; }
-@media (max-width: 760px) {
+@media (max-width: 850px) {
   .header-inner { padding: 0 18px; gap: 10px 20px; flex-wrap: wrap; min-height: auto; padding-top: 14px; }
   .wordmark { margin-right: auto; }
-  .site-header nav { order: 3; width: 100%; gap: clamp(8px, 3vw, 20px); min-height: 40px; flex-wrap: wrap; }
+  .site-header nav { order: 3; width: 100%; gap: 4px clamp(7px, 2vw, 16px); min-height: 40px; flex-wrap: wrap; font-size: .9rem; }
+  .site-header nav a { min-height: 40px; }
   .workspace { display: block; }
   .sidebar { display: none; }
   .study, .mock-workspace, .home-panel { padding: 30px 18px 36px; }
