@@ -1,4 +1,5 @@
 import { questions, topics, tracks, mocks, references } from "./bank.js";
+import { relatedGroups, shortAnswers } from "./answer-guide.js";
 
 const el = id => document.getElementById(id);
 const questionLabel = id => "Q" + String(id).padStart(3, "0");
@@ -60,6 +61,8 @@ function option(value, label) {
 
 topicSelect.append(option("", "All topics"), ...topics.map(topic => option(topic, topic)));
 el("mobile-track").append(...tracks.map(track => option(track.id, track.name)));
+el("browse-track").append(...tracks.map(track => option(track.id, track.name)));
+el("browse-topic").append(option("", "All topics"), ...topics.map(topic => option(topic, topic)));
 for (const track of tracks) {
   const control = button(track.name, () => selectTrack(track));
   control.dataset.track = track.id;
@@ -192,14 +195,10 @@ function updateFilters() {
     return;
   }
   const pool = selectedTrack.numbers?.map(id => byId.get(id)) ?? questions;
-  const terms = searchInput.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
   visibleQuestions = pool.filter(question => {
-    const haystack = [
-      questionLabel(question.id), "q" + question.id, question.id, question.topic, question.prompt,
-    ].join(" ").toLowerCase();
     return (!reviewOnly || progress[question.id] === "review") &&
       (!topicSelect.value || question.topic === topicSelect.value) &&
-      terms.every(term => haystack.includes(term));
+      matchesSearch(question, searchInput.value);
   });
   if (!visibleQuestions.some(question => question.id === currentId)) {
     currentId = visibleQuestions[0]?.id;
@@ -211,6 +210,95 @@ function updateFilters() {
   answerVisible = false;
   renderProgress();
   renderQuestion();
+}
+
+function matchesSearch(question, query) {
+  const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const haystack = [questionLabel(question.id), "q" + question.id, question.id, question.topic, question.prompt]
+    .join(" ").toLowerCase();
+  return terms.every(term => haystack.includes(term));
+}
+
+const browseFilters = ["browse-search", "browse-track", "browse-topic", "browse-status"];
+for (const id of browseFilters) el(id).addEventListener(id === "browse-search" ? "input" : "change", renderBrowse);
+el("browse-clear").addEventListener("click", () => {
+  for (const id of browseFilters) el(id).value = id === "browse-track" ? "all" : "";
+  renderBrowse();
+  el("browse-search").focus();
+});
+
+function renderBrowse() {
+  const track = tracks.find(track => track.id === el("browse-track").value);
+  const topic = el("browse-topic").value;
+  const status = el("browse-status").value;
+  const query = el("browse-search").value;
+  const results = questions.filter(question =>
+    (!track?.numbers || track.numbers.includes(question.id)) &&
+    (!topic || question.topic === topic) &&
+    (!status || (progress[question.id] ?? "new") === status) &&
+    matchesSearch(question, query)
+  );
+  el("browse-count").textContent = results.length + (results.length === 1 ? " question" : " questions");
+  const groups = [];
+  for (const name of topics) {
+    const matches = results.filter(question => question.topic === name);
+    if (!matches.length) continue;
+    const group = element("section", undefined, "browse-group");
+    const list = element("ul");
+    for (const question of matches) {
+      const row = element("li");
+      const mark = gradeValues.indexOf(progress[question.id]);
+      const link = studyLink(question.id);
+      link.prepend(element("span", questionLabel(question.id) + " ", "browse-id"));
+      row.append(link, element("span", mark < 0 ? "Unseen" : grades[mark], "browse-mark"));
+      list.append(row);
+    }
+    group.append(element("h2", name), list);
+    groups.push(group);
+  }
+  el("browse-results").replaceChildren(...(groups.length ? groups : [
+    element("p", "No questions match these filters. Try a different search or clear the filters."),
+  ]));
+}
+
+function appendAnswerBlocks(target, blocks) {
+  for (const block of blocks) {
+    if (block.code === undefined) {
+      target.append(element("p", block.text));
+      continue;
+    }
+    const pre = element("pre");
+    pre.tabIndex = 0;
+    pre.setAttribute("aria-label", "Code example");
+    pre.append(element("code", block.code));
+    target.append(pre);
+  }
+}
+
+function renderAnswer(question, answer) {
+  const short = shortAnswers[question.id];
+  const [first, ...rest] = question.answer;
+  const lead = short ?? first.text;
+  const details = short || first.text === undefined ? question.answer : rest;
+  if (lead) {
+    answer.append(element("h3", short ? "30-second answer" : "Suggested answer"), element("p", lead));
+  }
+  if (details.length) {
+    const disclosure = element("details", undefined, "answer-details");
+    disclosure.append(element("summary", "Examples and explanation"));
+    appendAnswerBlocks(disclosure, details);
+    answer.append(disclosure);
+  }
+  const related = relatedGroups.find(group => group.includes(question.id));
+  if (related && !quickSession) {
+    const list = element("ul", undefined, "study-links");
+    for (const id of related.filter(id => id !== question.id)) {
+      const item = element("li");
+      item.append(studyLink(id), id === related[0] ? " · Primary explanation" : "");
+      list.append(item);
+    }
+    answer.append(element("h3", "Related questions"), list);
+  }
 }
 
 function renderQuestion(focus = false) {
@@ -256,17 +344,7 @@ function renderQuestion(focus = false) {
   answer.hidden = !answerVisible;
   questionCard.replaceChildren(meta, heading, reveal, answer);
   if (answerVisible) {
-    for (const block of question.answer) {
-      if (block.code !== undefined) {
-        const pre = element("pre");
-        pre.tabIndex = 0;
-        pre.setAttribute("aria-label", "Code example");
-        pre.append(element("code", block.code));
-        answer.append(pre);
-      } else {
-        answer.append(element("p", block.text));
-      }
-    }
+    renderAnswer(question, answer);
     const actions = element("div", undefined, "card-actions");
     for (const [i, label] of grades.entries()) {
       const grade = gradeValues[i];
@@ -416,7 +494,7 @@ function startMock(mock) {
   window.clearInterval(timerInterval);
   attempt = {
     mock, index: 0, deadline: timed ? Date.now() + 30 * 60 * 1000 : null, finished: false,
-    answers: mock.questions.map(() => ({ revealed: false, scores: [false, false, false] })),
+    answers: mock.questions.map(() => ({ stage: 0, notes: "", scores: [false, false, false] })),
   };
   if (timed) timerInterval = window.setInterval(updateTimer, 1000);
   renderMock(true);
@@ -447,11 +525,29 @@ function renderMock(focus = false) {
   const heading = element("h2", item.prompt);
   heading.tabIndex = -1;
   card.append(element("p", questionLabel(item.id) + " · " + item.minutes + " min suggested", "question-meta"), heading);
-  if (answer.revealed) {
+  let stageHeading = heading;
+  if (answer.stage >= 1) {
     const detail = element("div", undefined, "answer");
-    detail.append(element("p", "Follow-up — " + item.followup));
+    stageHeading = element("h3", "Follow-up");
+    stageHeading.tabIndex = -1;
+    detail.append(stageHeading, element("p", item.followup));
+    card.append(detail);
+  }
+  const notes = element("label", undefined, "mock-notes");
+  notes.append(element("span", "Notes (optional)"));
+  const input = element("textarea");
+  input.rows = 3;
+  input.maxLength = 1500;
+  input.value = answer.notes;
+  input.addEventListener("input", () => { answer.notes = input.value; });
+  notes.append(input, element("small", "Notes stay in this open mock and are cleared when you reload."));
+  card.append(notes);
+  if (answer.stage === 2) {
     const field = element("fieldset", undefined, "rubric");
-    field.append(element("legend", "Award one point for each item you covered"));
+    const legend = element("legend", "Award one point for each item you covered");
+    legend.tabIndex = -1;
+    stageHeading = legend;
+    field.append(legend);
     for (const [i, score] of item.criteria.entries()) {
       const label = element("label");
       const checkbox = element("input");
@@ -462,11 +558,10 @@ function renderMock(focus = false) {
       label.append(checkbox, sentence + ".");
       field.append(label);
     }
-    detail.append(field);
-    card.append(detail);
+    card.append(field);
   } else {
-    card.append(button("Reveal follow-up and rubric", () => {
-      answer.revealed = true;
+    card.append(button(answer.stage === 0 ? "Show follow-up" : "Reveal rubric", () => {
+      answer.stage++;
       renderMock(true);
     }, "primary reveal"));
   }
@@ -484,10 +579,11 @@ function renderMock(focus = false) {
     }
     renderMock(true);
   }, "primary");
+  next.disabled = answer.stage < 2;
   controls.append(previous, next);
   mockContent.replaceChildren(status, card, controls);
   if (deadline) updateTimer();
-  if (focus) heading.focus();
+  if (focus) stageHeading.focus();
 }
 
 function renderMockSummary(focus) {
@@ -539,19 +635,28 @@ function renderMockSummary(focus) {
 function followLocation(focus = false) {
   const mockMode = location.hash === "#mocks";
   const labMode = location.hash === "#lab";
+  const browseMode = location.hash === "#browse";
   const qMatch = location.hash.match(/^#q-(\d+)$/);
-  el("practice").hidden = mockMode || labMode;
+  el("practice").hidden = mockMode || labMode || browseMode;
   el("mocks").hidden = !mockMode;
   el("lab").hidden = !labMode;
-  for (const id of ["practice", "mocks", "lab"]) {
-    if (el(id).hidden) el("nav-" + id).removeAttribute("aria-current");
-    else el("nav-" + id).setAttribute("aria-current", "page");
+  el("browse-panel").hidden = !browseMode;
+  const activeNav = browseMode ? "browse" : mockMode ? "mocks" : labMode ? "lab" : "practice";
+  for (const nav of document.querySelectorAll(".site-header nav a")) {
+    if (nav.id === "nav-" + activeNav) nav.setAttribute("aria-current", "page");
+    else nav.removeAttribute("aria-current");
   }
   if (mockMode) {
     renderMock();
     if (focus) {
       el("mock-heading").tabIndex = -1;
       el("mock-heading").focus();
+    }
+  } else if (browseMode) {
+    renderBrowse();
+    if (focus) {
+      el("browse-heading").tabIndex = -1;
+      el("browse-heading").focus();
     }
   } else if (labMode) {
     if (focus) {

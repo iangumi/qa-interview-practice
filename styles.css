@@ -17,9 +17,9 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 0; }
 a { color: var(--green); text-underline-offset: .2em; }
-button, input, select { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 button, select { cursor: pointer; }
-button, select, input {
+button, select, input, textarea {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--white);
@@ -72,6 +72,18 @@ h1 { font-size: clamp(2.35rem, 5.2vw, 4.5rem); line-height: .99; margin: 0; lett
 .quick-actions .text-button { min-height: 32px; }
 .filters { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 10px; }
 .filters select, .filters input { width: 100%; }
+.browse-filters { grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr)); }
+.browse-filters label { display: grid; gap: 6px; font-size: .9rem; font-weight: 650; }
+.browse-filters input, .browse-filters select { min-width: 0; font-weight: 400; }
+.browse-count { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); margin: 10px 0; }
+.browse-group { margin-bottom: 24px; }
+.browse-group h2 { font-size: 1.15rem; margin: 0 0 8px; }
+.browse-group ul { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--white); }
+.browse-group li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 10px; padding: 12px 14px; }
+.browse-group li + li { border-top: 1px solid var(--line); }
+.browse-group a { overflow-wrap: anywhere; }
+.browse-id, .browse-mark { font-size: .82rem; color: var(--muted); }
+.browse-id { margin-right: 6px; font-variant-numeric: tabular-nums; }
 .mobile-only { display: none; }
 .result-bar { min-height: 39px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 9px 0; font-size: .875rem; color: var(--muted); }
 .result-bar select { font-size: .875rem; min-height: 34px; padding: .3rem .5rem; width: min(53%, 290px); }
@@ -86,6 +98,9 @@ h1 { font-size: clamp(2.35rem, 5.2vw, 4.5rem); line-height: .99; margin: 0; lett
 .card-actions button[aria-pressed="true"] { background: var(--green-soft); border-color: var(--green); font-weight: 700; }
 .answer { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 3px; line-height: 1.63; }
 .answer p { margin: 12px 0; overflow-wrap: anywhere; }
+.answer h3 { font-size: 1rem; margin: 13px 0 0; }
+.answer-details { margin-top: 12px; }
+.answer-details summary { cursor: pointer; padding-block: 5px; color: var(--green); font-weight: 700; }
 .answer pre { font-size: .875rem; max-width: 100%; overflow: auto; padding: 13px; background: var(--warm); border-radius: 7px; }
 .answer pre:focus { outline-offset: 2px; }
 .references { margin: 25px 0 0; color: var(--muted); font-size: .94rem; }
@@ -105,6 +120,9 @@ input[type="checkbox"] { min-height: auto; padding: 0; accent-color: var(--green
 .rubric legend { padding: 0 .35rem; font-weight: 650; }
 .rubric label { display: flex; gap: 8px; align-items: baseline; margin-bottom: 6px; }
 .rubric input { flex: none; }
+.mock-notes { display: grid; gap: 6px; margin-top: 17px; font-weight: 650; }
+.mock-notes textarea { width: 100%; resize: vertical; font-weight: 400; }
+.mock-notes small { font-weight: 400; color: var(--muted); }
 .mock-history { margin-top: 28px; }
 .mock-history ul { list-style: none; padding: 0; }
 .study-links { margin: 12px 0 16px; padding-left: 1.4rem; line-height: 1.55; overflow-wrap: anywhere; }
@@ -124,7 +142,7 @@ footer { border-top: 1px solid var(--line); padding: 20px 32px; display: flex; j
 @media (max-width: 760px) {
   .header-inner { padding: 0 18px; gap: 10px 20px; flex-wrap: wrap; min-height: auto; padding-top: 14px; }
   .wordmark { margin-right: auto; }
-  .site-header nav { order: 3; width: 100%; gap: 20px; min-height: 40px; }
+  .site-header nav { order: 3; width: 100%; gap: clamp(8px, 3vw, 20px); min-height: 40px; flex-wrap: wrap; }
   .workspace { display: block; }
   .sidebar { display: none; }
   .study, .mock-workspace { padding: 30px 18px 36px; }
@@ -142,4 +160,5 @@ footer { border-top: 1px solid var(--line); padding: 20px 32px; display: flex; j
   .result-bar { flex-wrap: wrap; }
   .result-bar select { width: 100%; }
   .mock-option { align-items: flex-start; flex-direction: column; }
+  .browse-group li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 }

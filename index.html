@@ -17,6 +17,7 @@
       <a class="wordmark" href="#practice">QA Interview Practice</a>
       <nav aria-label="Main navigation">
         <a href="#practice" id="nav-practice">Practice</a>
+        <a href="#browse" id="nav-browse">Browse</a>
         <a href="#mocks" id="nav-mocks">Mock interviews</a>
         <a href="#lab" id="nav-lab">QA lab</a>
       </nav>
@@ -66,6 +67,24 @@
           <ul id="references"></ul>
         </details>
       </div>
+    </section>
+    <section id="browse-panel" class="mock-workspace" aria-labelledby="browse-heading" hidden>
+      <h1 id="browse-heading">Browse questions</h1>
+      <p class="intro">Find questions by topic, study path, or review status.</p>
+      <div class="filters browse-filters" aria-label="Browse filters">
+        <label>Search <input id="browse-search" type="search" placeholder="Topic or Q071"></label>
+        <label>Study path <select id="browse-track"></select></label>
+        <label>Topic <select id="browse-topic"></select></label>
+        <label>Status <select id="browse-status">
+          <option value="">Any status</option>
+          <option value="new">Unseen</option>
+          <option value="review">Needs review</option>
+          <option value="got-it">Got it</option>
+          <option value="skipped">Skipped</option>
+        </select></label>
+      </div>
+      <div class="browse-count"><p id="browse-count" role="status"></p><button id="browse-clear" type="button" class="text-button">Clear filters</button></div>
+      <div id="browse-results"></div>
     </section>
     <section id="mocks" class="mock-workspace" aria-labelledby="mock-heading" hidden>
       <h1 id="mock-heading">Mock interviews</h1>
