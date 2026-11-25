@@ -1,5 +1,7 @@
 # QA Interview Practice
 
+[Open the practice site](https://iangumi.github.io/qa-interview-practice/)
+
 An interactive study companion for QA and SDET interviews. It includes 143 questions and answers, three role-based paths, a 25-question core set, and three scored mock interviews.
 
 - Search by question, topic, or question ID.
