@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Practise 143 QA interview questions, follow role-based study paths, and take three scored mock interviews.">
+  <meta name="theme-color" content="#f7f5ed">
+  <title>QA Interview Practice</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="wordmark" href="#practice">QA Interview Practice</a>
+      <nav aria-label="Main navigation">
+        <a href="#practice" id="nav-practice">Practice</a>
+        <a href="#mocks" id="nav-mocks">Mock interviews</a>
+      </nav>
+      <a class="repo-link" href="https://github.com/iangumi/qa-interview-practice">GitHub <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main id="main" tabindex="-1">
+    <section id="practice" class="workspace" aria-labelledby="practice-heading">
+      <aside class="sidebar" aria-label="Study paths and progress">
+        <h2>Study paths</h2>
+        <div id="tracks" class="track-list" aria-label="Study paths"></div>
+        <div class="progress-block">
+          <div class="progress-heading"><h2>Progress</h2><span id="percentage"></span></div>
+          <progress id="progress" aria-label="Questions reviewed"></progress>
+          <p id="progress-summary"></p>
+          <button id="review-queue" class="text-button" type="button" aria-pressed="false">Review marked questions</button>
+        </div>
+      </aside>
+      <div class="study">
+        <h1 id="practice-heading">Practice for your next QA interview.</h1>
+        <p class="intro">Work through 143 questions on test design, automation, and QA leadership. Try each answer before you reveal it.</p>
+        <div class="filters" aria-label="Question filters">
+          <label class="search-field">
+            <span class="sr-only">Search questions</span>
+            <input id="search" type="search" placeholder="Search questions…" autocomplete="off">
+          </label>
+          <label class="topic-field"><span class="sr-only">Filter by topic</span><select id="topics"></select></label>
+          <label class="mobile-only"><span class="sr-only">Study path</span><select id="mobile-track"></select></label>
+          <button id="mobile-review" class="mobile-only text-button" type="button" aria-pressed="false">Review marked questions</button>
+        </div>
+        <div class="result-bar">
+          <label for="matches" id="result-label" aria-live="polite"></label>
+          <select id="matches" aria-label="Jump to a question"></select>
+        </div>
+        <article class="question-card" id="question" aria-labelledby="question-title"></article>
+        <div class="question-controls" id="question-controls">
+          <button id="previous" type="button">← Previous</button>
+          <button id="next" class="primary" type="button">Next →</button>
+        </div>
+        <details class="references">
+          <summary>Reference documentation</summary>
+          <ul id="references"></ul>
+        </details>
+      </div>
+    </section>
+    <section id="mocks" class="mock-workspace" aria-labelledby="mock-heading" hidden>
+      <h1 id="mock-heading">Mock interviews</h1>
+      <p class="intro">Pick a role, answer four prompts aloud, then score yourself using the rubric. Each session takes about 30 minutes.</p>
+      <div id="mock-content"></div>
+    </section>
+    <noscript><p class="noscript">Enable JavaScript to open the practice questions and mock interviews.</p></noscript>
+  </main>
+  <footer>QA Interview Practice <a href="https://github.com/iangumi/qa-interview-practice/issues">Suggest an improvement on GitHub ↗</a></footer>
+</body>
+</html>
