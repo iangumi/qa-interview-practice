@@ -2,12 +2,14 @@
 
 [Open the practice site](https://iangumi.github.io/qa-interview-practice/)
 
-An interactive study companion for QA and SDET interviews. It includes 143 questions and answers, three role-based paths, a 25-question core set, and three scored mock interviews.
+An interactive study companion for QA and SDET interviews. It includes 149 questions and answers, a QA Fundamentals path, three role-based paths, a 25-question core set, and three scored mock interviews.
 
 - Browse questions by topic and filter by study path, review status, or search term.
 - Reveal answers after attempting them. Mark questions as understood, needing review, or skipped.
 - Practise short spoken answers for the core set, then expand the explanation or explore related questions.
 - Start a five-question practice session from the selected study path and get a recap.
+- Resume the last question and study path from the homepage.
+- Review missed questions after one day. Successful reviews are scheduled at intervals of up to 30 days.
 - Use timed or untimed mocks, answer the follow-up, then reveal the rubric. Optional notes stay in the open mock.
 - Revisit completed mock scores and add questions with missed rubric items to review.
 - [Run the flaky save lab](lab/) with a starter test and reference solution.

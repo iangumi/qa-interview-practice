@@ -1515,6 +1515,84 @@ export const questions = [
         "text": "Token optimisation reduces unnecessary model input and output within the context limit, which can lower cost and latency. Retrieve only relevant chunks, deduplicate context, shorten repetitive examples and cache repeated prefixes where supported. Measure accuracy and completeness alongside token count to catch regressions."
       }
     ]
+  },
+  {
+    "id": 144,
+    "topic": "QA Fundamentals & Manual Testing",
+    "prompt": "How would you test a checkout flow before release?",
+    "answer": [
+      {
+        "text": "Start with the highest-risk outcomes: a customer is charged the correct amount, exactly one order is created, and the confirmation matches the order. Then test declined payments, duplicate submissions, expired carts, inventory changes, and what happens when the payment outcome is uncertain."
+      },
+      {
+        "text": "Use a payment sandbox. For a declined payment, check the customer message, absence of a completed order, and whether the cart can be retried. For a timeout, verify that retrying does not create a duplicate charge or order. Automate repeatable pricing and order checks at the API layer, keep one browser smoke test, and explore recovery paths manually."
+      }
+    ]
+  },
+  {
+    "id": 145,
+    "topic": "QA Fundamentals & Manual Testing",
+    "prompt": "How do you design boundary and equivalence partition tests?",
+    "answer": [
+      {
+        "text": "Group inputs that should behave the same way, then test representative inputs from each group and the points where behaviour changes."
+      },
+      {
+        "text": "Suppose free shipping starts at Rp100,000 before discounts. Check Rp99,999, Rp100,000, and Rp100,001. Also check a representative amount in each group. Ask which amount the business rule uses if taxes, discounts, or rounding can change the threshold result."
+      }
+    ]
+  },
+  {
+    "id": 146,
+    "topic": "QA Fundamentals & Manual Testing",
+    "prompt": "How would you run an exploratory testing session for checkout?",
+    "answer": [
+      {
+        "text": "Set a time limit and a charter such as ‘Explore how shoppers recover from interrupted checkout.’ Vary one condition at a time, collect evidence, and record coverage, findings, and questions."
+      },
+      {
+        "text": "Try back navigation during payment, switching networks, and re-opening the cart in a second tab. Look for duplicate orders, confusing status, and lost cart data. Debrief by naming the highest risk and the checks worth repeating."
+      }
+    ]
+  },
+  {
+    "id": 147,
+    "topic": "QA Fundamentals & Manual Testing",
+    "prompt": "How do you write a defect report that a developer can act on?",
+    "answer": [
+      {
+        "text": "Include a specific title, impact, environment and build, test data, reproduction steps, expected and actual results, and evidence. Record how often it happens if it is intermittent."
+      },
+      {
+        "text": "For example, ‘Retry after payment timeout creates two orders’ is more actionable than ‘Checkout broken.’ Include two redacted order IDs and the request timeline if available. State whether the customer was charged and which part is still unverified."
+      }
+    ]
+  },
+  {
+    "id": 148,
+    "topic": "QA Fundamentals & Manual Testing",
+    "prompt": "How do you validate an order API response without testing through the UI?",
+    "answer": [
+      {
+        "text": "Check the status, payload, and relationship between the request and response. Then fetch the order independently to verify the expected record was saved, and test an invalid request alongside the happy path."
+      },
+      {
+        "text": "For a create-order request, a 201 and an ID are only the first checks. Read the order by its ID, assert items and total, and check duplicate submission behaviour against the API contract."
+      }
+    ]
+  },
+  {
+    "id": 149,
+    "topic": "QA Fundamentals & Manual Testing",
+    "prompt": "How would you give a release recommendation when checkout testing is incomplete?",
+    "answer": [
+      {
+        "text": "State what was tested, which important paths remain unverified, what the customer or business impact could be, and your recommendation. Name the decision owner and what evidence would change your recommendation."
+      },
+      {
+        "text": "If duplicate charges are still possible and rollback takes hours, recommend holding the release. If the remaining gap is low impact and the feature can be disabled quickly, explain the conditions under which release could proceed and how the team will monitor it."
+      }
+    ]
   }
 ];
 
@@ -1537,7 +1615,8 @@ export const topics = [
   "Git & Version Control",
   "CI/CD & Jenkins Integration",
   "Quality Assurance & Agile Methodology",
-  "Emerging Technologies – AI & LLM Concepts"
+  "Emerging Technologies – AI & LLM Concepts",
+  "QA Fundamentals & Manual Testing"
 ];
 
 export const tracks = [
@@ -1650,6 +1729,23 @@ export const tracks = [
       76,
       131,
       132
+    ]
+  },
+  {
+    "id": "fundamentals",
+    "name": "QA Fundamentals",
+    "numbers": [
+      144,
+      145,
+      146,
+      147,
+      148,
+      149,
+      134,
+      135,
+      136,
+      108,
+      139
     ]
   }
 ];

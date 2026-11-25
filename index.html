@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Practise 143 QA interview questions, follow role-based study paths, and take three scored mock interviews.">
+  <meta name="description" content="Practise QA interview questions, follow role-based study paths, and take three scored mock interviews.">
   <meta name="theme-color" content="#f7f5ed">
   <title>QA Interview Practice</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -14,7 +14,7 @@
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="header-inner">
-      <a class="wordmark" href="#practice">QA Interview Practice</a>
+      <a class="wordmark" href="#home">QA Interview Practice</a>
       <nav aria-label="Main navigation">
         <a href="#practice" id="nav-practice">Practice</a>
         <a href="#browse" id="nav-browse">Browse</a>
@@ -25,7 +25,18 @@
     </div>
   </header>
   <main id="main" tabindex="-1">
-    <section id="practice" class="workspace" aria-labelledby="practice-heading">
+    <section id="home-panel" class="home-panel" aria-labelledby="home-heading">
+      <h1 id="home-heading">Practice for your next QA interview.</h1>
+      <p class="intro">Pick a study path, practise aloud, and come back to the questions you find hardest.</p>
+      <div class="home-actions" id="home-actions">
+        <a class="primary-link" id="continue-study" href="#resume" hidden>Continue where you left off</a>
+        <a id="home-due" href="#due" hidden></a>
+      </div>
+      <p class="resume-detail" id="resume-detail" hidden></p>
+      <h2>Pick your study path</h2>
+      <div class="home-paths" id="home-paths"></div>
+    </section>
+    <section id="practice" class="workspace" aria-labelledby="practice-heading" hidden>
       <aside class="sidebar" aria-label="Study paths and progress">
         <h2>Study paths</h2>
         <div id="tracks" class="track-list" aria-label="Study paths"></div>
@@ -34,13 +45,15 @@
           <progress id="progress" aria-label="Questions reviewed"></progress>
           <p id="progress-summary"></p>
           <button id="review-queue" class="text-button" type="button" aria-pressed="false">Review marked questions</button>
+          <button id="due-queue" class="text-button" type="button" aria-pressed="false">Due for review</button>
         </div>
       </aside>
       <div class="study">
         <h1 id="practice-heading">Practice for your next QA interview.</h1>
-        <p class="intro">Work through 143 questions on test design, automation, and QA leadership. Try each answer before you reveal it.</p>
+        <p class="intro">Try each answer before you reveal it. Return to your review queue to practise questions again.</p>
         <div class="quick-actions">
           <button id="start-quick" class="primary" type="button">Start 10-minute practice</button>
+          <p id="quick-empty" role="status"></p>
           <p id="quick-status" aria-live="polite" hidden></p>
           <button id="finish-quick" class="text-button" type="button" hidden>Finish early</button>
         </div>
@@ -52,6 +65,7 @@
           <label class="topic-field"><span class="sr-only">Filter by topic</span><select id="topics"></select></label>
           <label class="mobile-only"><span class="sr-only">Study path</span><select id="mobile-track"></select></label>
           <button id="mobile-review" class="mobile-only text-button" type="button" aria-pressed="false">Review marked questions</button>
+          <button id="mobile-due" class="mobile-only text-button" type="button" aria-pressed="false">Due for review</button>
         </div>
         <div class="result-bar" id="result-bar">
           <label for="matches" id="result-label" aria-live="polite"></label>
@@ -79,6 +93,7 @@
           <option value="">Any status</option>
           <option value="new">Unseen</option>
           <option value="review">Needs review</option>
+          <option value="due">Due for review</option>
           <option value="got-it">Got it</option>
           <option value="skipped">Skipped</option>
         </select></label>

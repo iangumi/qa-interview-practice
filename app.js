@@ -5,6 +5,10 @@ const el = id => document.getElementById(id);
 const questionLabel = id => "Q" + String(id).padStart(3, "0");
 const key = "qa-interview-practice.progress.v1";
 const mockKey = "qa-interview-practice.mocks.v1";
+const reviewKey = "qa-interview-practice.review.v1";
+const resumeKey = "qa-interview-practice.resume.v1";
+const day = 24 * 60 * 60 * 1000;
+const reviewIntervals = [3, 7, 14, 30];
 const grades = ["Got it", "Needs review", "Skipped"];
 const gradeValues = ["got-it", "review", "skipped"];
 const byId = new Map(questions.map(question => [question.id, question]));
@@ -23,21 +27,25 @@ function button(label, action, className) {
   return control;
 }
 
-function readProgress() {
+function readLocal(key) {
   try {
-    const saved = JSON.parse(localStorage.getItem(key));
-    return Object.fromEntries(Object.entries(saved ?? {}).filter(
-      ([id, grade]) => byId.has(Number(id)) && gradeValues.includes(grade)
-    ));
+    return JSON.parse(localStorage.getItem(key));
   } catch {
-    return {};
+    return null;
   }
 }
 
-const progress = readProgress();
+const progress = Object.fromEntries(Object.entries(readLocal(key) ?? {}).filter(
+  ([id, grade]) => byId.has(Number(id)) && gradeValues.includes(grade)
+));
+const schedule = Object.fromEntries(Object.entries(readLocal(reviewKey) ?? {}).filter(
+  ([id, entry]) => byId.has(Number(id)) && Number.isFinite(entry?.at) && !Number.isNaN(new Date(entry.at).getTime()) &&
+    Number.isInteger(entry.step) && entry.step >= 0 && entry.step < reviewIntervals.length
+));
+let resume = readLocal(resumeKey);
 const mockHistory = readMockHistory();
 let selectedTrack = tracks[0];
-let reviewOnly = false;
+let reviewFilter = "";
 let currentId = questions[0].id;
 let visibleQuestions = [];
 let answerVisible = false;
@@ -52,6 +60,19 @@ const topicSelect = el("topics");
 const matchSelect = el("matches");
 const questionCard = el("question");
 const mockContent = el("mock-content");
+const pathDescriptions = {
+  fundamentals: "Test design, exploratory testing, API validation, and release decisions.",
+  junior: "Testing essentials, browser basics, and your first automation checks.",
+  sdet: "Automation frameworks, Playwright, API testing, and CI.",
+  lead: "Test strategy, release risk, and decisions about automation.",
+};
+for (const [id, description] of Object.entries(pathDescriptions)) {
+  const track = tracks.find(item => item.id === id);
+  const link = element("a", undefined, "home-path");
+  link.href = "#start-" + id;
+  link.append(element("strong", track.name), element("span", description));
+  el("home-paths").append(link);
+}
 
 function option(value, label) {
   const node = element("option", label);
@@ -76,30 +97,62 @@ for (const reference of references) {
   el("references").append(item);
 }
 
-function selectTrack(track) {
+function selectTrack(track, id = track.numbers?.[0] ?? questions[0].id) {
+  quickSession = null;
+  el("quick-empty").textContent = "";
   selectedTrack = track;
-  reviewOnly = false;
+  reviewFilter = "";
   searchInput.value = "";
   topicSelect.value = "";
-  currentId = track.numbers?.[0] ?? questions[0].id;
+  currentId = id;
   updateFilters();
 }
 
-function saveProgress() {
+function saveLocal(key, value) {
   try {
-    localStorage.setItem(key, JSON.stringify(progress));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     storageAvailable = false;
   }
+}
+
+function saveProgress() {
+  saveLocal(key, progress);
+  saveLocal(reviewKey, schedule);
   renderProgress();
 }
 
+function isDue(id, now = Date.now()) {
+  if (schedule[id]) return schedule[id].at <= now;
+  return progress[id] === "review";
+}
+
+function recordSchedule(id, grade) {
+  const now = Date.now();
+  const previous = schedule[id];
+  if (grade === "skipped") return;
+  if (grade === "review") {
+    schedule[id] = { at: now + day, step: 0 };
+  } else if (!previous || previous.at <= now) {
+    const step = previous && progress[id] === "got-it" ? Math.min(previous.step + 1, reviewIntervals.length - 1) : 0;
+    schedule[id] = { at: now + day * reviewIntervals[step], step };
+  }
+}
+
+function renderReviewDate() {
+  const date = schedule[currentId]?.at;
+  el("next-review-date").textContent = date ? (isDue(currentId) ? "Due for review" :
+    "Next review " + new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" })) : "";
+}
+
 function record(grade) {
+  recordSchedule(currentId, grade);
   progress[currentId] = grade;
   if (quickSession) quickSession.grades.set(currentId, grade);
   saveProgress();
   // A resolved review item remains in view until the learner presses Next.
-  if (reviewOnly && grade !== "review") el("next").disabled = false;
+  if (reviewFilter && !matchesReview(currentId)) el("next").disabled = false;
+  renderReviewDate();
   for (const control of questionCard.querySelectorAll("[data-grade]")) {
     control.setAttribute("aria-pressed", String(control.dataset.grade === grade));
   }
@@ -107,10 +160,15 @@ function record(grade) {
 
 function startQuickPractice() {
   const pool = selectedTrack.numbers ?? questions.map(question => question.id);
-  const review = pool.filter(id => progress[id] === "review");
+  const review = pool.filter(id => isDue(id));
   const unseen = pool.filter(id => !progress[id]);
-  const skipped = pool.filter(id => progress[id] === "skipped");
-  const ids = [...new Set([...review.slice(0, 3), ...unseen.slice(0, 2), ...review, ...unseen, ...skipped, ...pool])].slice(0, 5);
+  const skipped = pool.filter(id => progress[id] === "skipped" && !schedule[id]);
+  const ids = [...new Set([...review.slice(0, 3), ...unseen.slice(0, 2), ...review, ...unseen, ...skipped])].slice(0, 5);
+  if (!ids.length) {
+    el("quick-empty").textContent = "You’re caught up on this path. Browse the questions or choose another path.";
+    return;
+  }
+  el("quick-empty").textContent = "";
   quickSession = { ids, grades: new Map(), previousId: currentId, finished: false };
   if (location.hash.startsWith("#q-")) history.replaceState(null, "", "#practice");
   currentId = ids[0];
@@ -168,12 +226,20 @@ function renderQuickControls() {
   el("result-bar").hidden = active && quickSession.finished;
   for (const control of el("tracks").children) control.disabled = active;
   el("review-queue").disabled = active;
+  el("due-queue").disabled = active;
+}
+
+function matchesReview(id) {
+  if (reviewFilter === "due") return isDue(id);
+  if (reviewFilter === "marked") return progress[id] === "review";
+  return true;
 }
 
 function renderProgress() {
   const ids = selectedTrack.numbers ?? questions.map(question => question.id);
   const seen = ids.filter(id => progress[id]).length;
   const review = ids.filter(id => progress[id] === "review").length;
+  const due = ids.filter(id => isDue(id)).length;
   const percent = Math.round(seen * 100 / ids.length);
   el("percentage").textContent = percent + "%";
   el("progress").max = ids.length;
@@ -182,7 +248,11 @@ function renderProgress() {
   el("progress-summary").textContent = storageAvailable ? scope : scope + ". Progress is available for this session.";
   for (const id of ["review-queue", "mobile-review"]) {
     el(id).textContent = "Review marked questions (" + review + ")";
-    el(id).setAttribute("aria-pressed", String(reviewOnly));
+    el(id).setAttribute("aria-pressed", String(reviewFilter === "marked"));
+  }
+  for (const id of ["due-queue", "mobile-due"]) {
+    el(id).textContent = "Due for review (" + due + ")";
+    el(id).setAttribute("aria-pressed", String(reviewFilter === "due"));
   }
 }
 
@@ -196,7 +266,7 @@ function updateFilters() {
   }
   const pool = selectedTrack.numbers?.map(id => byId.get(id)) ?? questions;
   visibleQuestions = pool.filter(question => {
-    return (!reviewOnly || progress[question.id] === "review") &&
+    return matchesReview(question.id) &&
       (!topicSelect.value || question.topic === topicSelect.value) &&
       matchesSearch(question, searchInput.value);
   });
@@ -235,7 +305,7 @@ function renderBrowse() {
   const results = questions.filter(question =>
     (!track?.numbers || track.numbers.includes(question.id)) &&
     (!topic || question.topic === topic) &&
-    (!status || (progress[question.id] ?? "new") === status) &&
+    (!status || (status === "due" ? isDue(question.id) : (progress[question.id] ?? "new") === status)) &&
     matchesSearch(question, query)
   );
   el("browse-count").textContent = results.length + (results.length === 1 ? " question" : " questions");
@@ -312,14 +382,15 @@ function renderQuestion(focus = false) {
   matchSelect.hidden = count < 2 || Boolean(quickSession);
   el("question-controls").hidden = count === 0;
   el("previous").disabled = index <= 0;
-  el("next").disabled = !quickSession && index >= count - 1 && !(reviewOnly && progress[currentId] !== "review");
+  el("next").disabled = !quickSession && index >= count - 1 && !(reviewFilter && !matchesReview(currentId));
   el("next").textContent = quickSession && index === count - 1 ? "See recap" : "Next →";
 
   if (!question || !count) {
-    const heading = element("h2", reviewOnly ? "Nothing to review here" : "No matching questions");
+    const heading = element("h2", reviewFilter ? "Nothing to review here" : "No matching questions");
     heading.tabIndex = -1;
     heading.id = "question-title";
-    const description = reviewOnly ? "Questions marked Needs review appear here." : "Try another search or clear the filters.";
+    const description = reviewFilter === "due" ? "Questions appear here when their next review is due." :
+      reviewFilter === "marked" ? "Questions marked Needs review appear here." : "Try another search or clear the filters.";
     questionCard.replaceChildren(heading, element("p", description), button("Clear filters", () => selectTrack(tracks[0])));
     return;
   }
@@ -353,7 +424,15 @@ function renderQuestion(focus = false) {
       control.setAttribute("aria-pressed", String(progress[question.id] === grade));
       actions.append(control);
     }
-    answer.append(actions);
+    const date = element("p", undefined, "review-date");
+    date.id = "next-review-date";
+    date.setAttribute("role", "status");
+    answer.append(actions, date);
+    renderReviewDate();
+  }
+  if (location.hash && !el("practice").hidden && !quickSession && !reviewFilter) {
+    resume = { trackId: selectedTrack.id, id: question.id };
+    saveLocal(resumeKey, resume);
   }
   if (focus) heading.focus();
 }
@@ -372,7 +451,7 @@ function moveQuestion(offset) {
   const nextQuestion = visibleQuestions[index + offset];
   if (quickSession && !nextQuestion && offset > 0) {
     finishQuickPractice();
-  } else if (!quickSession && reviewOnly && progress[currentId] !== "review") {
+  } else if (!quickSession && reviewFilter && !matchesReview(currentId)) {
     currentId = nextQuestion?.id;
     updateFilters();
     el("question-title").focus();
@@ -389,13 +468,17 @@ el("next").addEventListener("click", () => moveQuestion(1));
 el("start-quick").addEventListener("click", startQuickPractice);
 el("finish-quick").addEventListener("click", finishQuickPractice);
 el("mobile-track").addEventListener("change", event => selectTrack(tracks.find(track => track.id === event.target.value)));
-for (const id of ["review-queue", "mobile-review"]) {
-  el(id).addEventListener("click", () => {
-    reviewOnly = !reviewOnly;
-    topicSelect.value = "";
-    searchInput.value = "";
-    updateFilters();
-  });
+function openReview(filter) {
+  if (location.hash.startsWith("#q-")) history.replaceState(null, "", "#practice");
+  reviewFilter = reviewFilter === filter ? "" : filter;
+  topicSelect.value = "";
+  searchInput.value = "";
+  currentId = undefined;
+  updateFilters();
+}
+
+for (const [id, filter] of [["review-queue", "marked"], ["mobile-review", "marked"], ["due-queue", "due"], ["mobile-due", "due"]]) {
+  el(id).addEventListener("click", () => openReview(filter));
 }
 
 function studyLink(id, numberOnly = false) {
@@ -613,7 +696,12 @@ function renderMockSummary(focus) {
   card.append(element("h3", missedIds.length ? "What to practise next" : "All rubric items covered"), list);
   if (missedIds.length) {
     const addToReview = button("Add missed questions to review", () => {
-      for (const id of missedIds) progress[id] = "review";
+      for (const id of missedIds) {
+        if (progress[id] !== "review") {
+          progress[id] = "review";
+          schedule[id] = { at: Date.now(), step: 0 };
+        }
+      }
       saveProgress();
       reviewStatus.textContent = "Questions added to your review queue.";
       addToReview.disabled = true;
@@ -632,21 +720,47 @@ function renderMockSummary(focus) {
   if (focus) heading.focus();
 }
 
+function resumeTrack() {
+  return tracks.find(track => track.id === resume?.trackId && byId.has(resume.id) &&
+    (!track.numbers || track.numbers.includes(resume.id)));
+}
+
+function renderHome() {
+  const track = resumeTrack();
+  el("continue-study").hidden = !track;
+  el("resume-detail").hidden = !track;
+  el("resume-detail").textContent = track ? track.name + " · " + questionLabel(resume.id) : "";
+  const due = questions.filter(question => isDue(question.id)).length;
+  el("home-due").hidden = due === 0;
+  el("home-due").textContent = due + (due === 1 ? " question due for review" : " questions due for review");
+}
+
 function followLocation(focus = false) {
-  const mockMode = location.hash === "#mocks";
-  const labMode = location.hash === "#lab";
-  const browseMode = location.hash === "#browse";
-  const qMatch = location.hash.match(/^#q-(\d+)$/);
-  el("practice").hidden = mockMode || labMode || browseMode;
+  const route = location.hash;
+  const homeMode = route === "" || route === "#home";
+  const mockMode = route === "#mocks";
+  const labMode = route === "#lab";
+  const browseMode = route === "#browse";
+  const qMatch = route.match(/^#q-(\d+)$/);
+  const startTrack = route.startsWith("#start-") && tracks.find(track => track.id === route.slice(7));
+  const returning = route === "#resume" && resumeTrack();
+  el("home-panel").hidden = !homeMode;
+  el("practice").hidden = homeMode || mockMode || labMode || browseMode;
   el("mocks").hidden = !mockMode;
   el("lab").hidden = !labMode;
   el("browse-panel").hidden = !browseMode;
-  const activeNav = browseMode ? "browse" : mockMode ? "mocks" : labMode ? "lab" : "practice";
+  const activeNav = homeMode ? "home" : browseMode ? "browse" : mockMode ? "mocks" : labMode ? "lab" : "practice";
   for (const nav of document.querySelectorAll(".site-header nav a")) {
     if (nav.id === "nav-" + activeNav) nav.setAttribute("aria-current", "page");
     else nav.removeAttribute("aria-current");
   }
-  if (mockMode) {
+  if (homeMode) {
+    renderHome();
+    if (focus) {
+      el("home-heading").tabIndex = -1;
+      el("home-heading").focus();
+    }
+  } else if (mockMode) {
     renderMock();
     if (focus) {
       el("mock-heading").tabIndex = -1;
@@ -663,18 +777,26 @@ function followLocation(focus = false) {
       el("lab-heading").tabIndex = -1;
       el("lab-heading").focus();
     }
-  } else if (qMatch && byId.has(Number(qMatch[1]))) {
-    quickSession = null;
-    selectedTrack = tracks[0];
-    reviewOnly = false;
-    searchInput.value = "";
-    topicSelect.value = "";
-    currentId = Number(qMatch[1]);
-    updateFilters();
+  } else if (startTrack || returning || route === "#due") {
+    history.replaceState(null, "", "#practice");
+    if (route === "#due") {
+      quickSession = null;
+      selectedTrack = tracks[0];
+      reviewFilter = "";
+      openReview("due");
+    } else {
+      selectTrack(returning || startTrack, returning ? resume.id : undefined);
+    }
     if (focus) el("question-title").focus();
-  } else if (focus) {
-    el("practice-heading").tabIndex = -1;
-    el("practice-heading").focus();
+  } else if (qMatch && byId.has(Number(qMatch[1]))) {
+    selectTrack(tracks[0], Number(qMatch[1]));
+    if (focus) el("question-title").focus();
+  } else {
+    if (!quickSession && !reviewFilter) updateFilters();
+    if (focus) {
+      el("practice-heading").tabIndex = -1;
+      el("practice-heading").focus();
+    }
   }
 }
 
