@@ -18,6 +18,7 @@
       <nav aria-label="Main navigation">
         <a href="#practice" id="nav-practice">Practice</a>
         <a href="#mocks" id="nav-mocks">Mock interviews</a>
+        <a href="#lab" id="nav-lab">QA lab</a>
       </nav>
       <a class="repo-link" href="https://github.com/iangumi/qa-interview-practice">GitHub <span aria-hidden="true">↗</span></a>
     </div>
@@ -37,7 +38,12 @@
       <div class="study">
         <h1 id="practice-heading">Practice for your next QA interview.</h1>
         <p class="intro">Work through 143 questions on test design, automation, and QA leadership. Try each answer before you reveal it.</p>
-        <div class="filters" aria-label="Question filters">
+        <div class="quick-actions">
+          <button id="start-quick" class="primary" type="button">Start 10-minute practice</button>
+          <p id="quick-status" aria-live="polite" hidden></p>
+          <button id="finish-quick" class="text-button" type="button" hidden>Finish early</button>
+        </div>
+        <div class="filters" id="filters" aria-label="Question filters">
           <label class="search-field">
             <span class="sr-only">Search questions</span>
             <input id="search" type="search" placeholder="Search questions…" autocomplete="off">
@@ -46,7 +52,7 @@
           <label class="mobile-only"><span class="sr-only">Study path</span><select id="mobile-track"></select></label>
           <button id="mobile-review" class="mobile-only text-button" type="button" aria-pressed="false">Review marked questions</button>
         </div>
-        <div class="result-bar">
+        <div class="result-bar" id="result-bar">
           <label for="matches" id="result-label" aria-live="polite"></label>
           <select id="matches" aria-label="Jump to a question"></select>
         </div>
@@ -65,6 +71,48 @@
       <h1 id="mock-heading">Mock interviews</h1>
       <p class="intro">Pick a role, answer four prompts aloud, then score yourself using the rubric. Each session takes about 30 minutes.</p>
       <div id="mock-content"></div>
+    </section>
+    <section id="lab" class="mock-workspace" aria-labelledby="lab-heading" hidden>
+      <h1 id="lab-heading">Debug a flaky save test</h1>
+      <p class="intro">A profile saves in the browser, but the automation sometimes reads its status too early. Diagnose the failure, fix the test, and explain how you would verify your change in CI.</p>
+      <article class="question-card lab-card">
+        <h2>Reproduce the failure</h2>
+        <p>The starter test passes when the demo responds in 20 ms and fails when it responds in 650 ms. Both delays use the same fixture and successful save flow.</p>
+        <div class="answer">
+          <pre tabindex="0" aria-label="Starter code"><code>await page.getByRole("button", { name: "Save profile" }).click();
+await page.waitForTimeout(100);
+const status = page.getByRole("status");
+expect(await status.textContent()).toBe("Profile saved");</code></pre>
+          <details>
+            <summary>Read the failure trace excerpt</summary>
+            <pre tabindex="0" aria-label="Failure trace excerpt"><code>Expected: "Profile saved"
+Received: "Saving…"
+
+  await page.waitForTimeout(100);
+  const status = page.getByRole("status");
+&gt; expect(await status.textContent()).toBe("Profile saved");</code></pre>
+          </details>
+        </div>
+        <h2>Your task</h2>
+        <ol>
+          <li>Explain what the snapshot of the status tells you about the failure.</li>
+          <li>Replace the fixed wait and one-time read with an assertion that waits for the saved status.</li>
+          <li>Check that the change passes with both response times. Explain how you would confirm the fix under the original CI conditions.</li>
+        </ol>
+        <details>
+          <summary>Hint</summary>
+          <p>Keep the status locator and ask Playwright to retry the expected text on that locator. A successful click and a completed save are separate events.</p>
+        </details>
+        <details>
+          <summary>Reference solution and verification</summary>
+          <div class="answer">
+            <pre tabindex="0" aria-label="Reference solution code"><code>await expect(page.getByRole("status")).toHaveText("Profile saved");</code></pre>
+            <p>This retries the locator assertion until the status changes or the assertion times out. Run both response-time cases repeatedly with retries disabled. In CI, use the original browser, runner, and worker settings, and inspect the failure trace if either case still fails.</p>
+            <p><a href="https://playwright.dev/docs/test-assertions">Playwright assertion documentation</a></p>
+          </div>
+        </details>
+        <p class="lab-source"><a href="https://github.com/iangumi/qa-interview-practice/tree/main/lab">Run the starter and reference solution on GitHub ↗</a></p>
+      </article>
     </section>
     <noscript><p class="noscript">Enable JavaScript to open the practice questions and mock interviews.</p></noscript>
   </main>

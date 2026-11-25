@@ -6,8 +6,11 @@ An interactive study companion for QA and SDET interviews. It includes 143 quest
 
 - Search by question, topic, or question ID.
 - Reveal answers after attempting them. Mark questions as understood, needing review, or skipped.
+- Start a five-question practice session from the selected study path and get a recap.
 - Use timed or untimed mocks and grade each answer against three criteria.
-- Study progress is saved in the current browser. Mock attempts are held in memory while the page is open.
+- Revisit completed mock scores and add questions with missed rubric items to review.
+- [Run the flaky save lab](lab/) with a starter test and reference solution.
+- Study progress and completed mock scores are saved in the current browser.
 
 ## Run locally
 

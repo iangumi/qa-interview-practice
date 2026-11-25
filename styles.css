@@ -67,6 +67,9 @@ progress::-moz-progress-bar { background: var(--green); border-radius: 8px; }
 .study { padding: 47px 34px 42px; min-width: 0; }
 h1 { font-size: clamp(2.35rem, 5.2vw, 4.5rem); line-height: .99; margin: 0; letter-spacing: -.069em; max-width: 760px; }
 .intro { margin: 18px 0 30px; font-size: clamp(1rem, 2vw, 1.17rem); line-height: 1.55; color: var(--muted); max-width: 660px; }
+.quick-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; margin-bottom: 13px; }
+.quick-actions p { margin: 0; font-weight: 700; color: var(--green); }
+.quick-actions .text-button { min-height: 32px; }
 .filters { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 10px; }
 .filters select, .filters input { width: 100%; }
 .mobile-only { display: none; }
@@ -91,7 +94,7 @@ h1 { font-size: clamp(2.35rem, 5.2vw, 4.5rem); line-height: .99; margin: 0; lett
 .mock-workspace { max-width: 900px; padding: 47px 32px 50px; margin: auto; min-height: 76vh; }
 .mock-selector { display: grid; gap: 10px; }
 .mock-option { display: flex; gap: 12px; justify-content: space-between; align-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--white); padding: 14px 17px; }
-.mock-option h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.mock-option h2, .mock-option h3 { margin: 0 0 4px; font-size: 1.1rem; }
 .mock-option p { margin: 0; color: var(--muted); font-size: .9rem; }
 .timer-toggle { display: flex; align-items: center; gap: 8px; margin-top: 15px; }
 input[type="checkbox"] { min-height: auto; padding: 0; accent-color: var(--green); width: 16px; height: 16px; }
@@ -102,9 +105,20 @@ input[type="checkbox"] { min-height: auto; padding: 0; accent-color: var(--green
 .rubric legend { padding: 0 .35rem; font-weight: 650; }
 .rubric label { display: flex; gap: 8px; align-items: baseline; margin-bottom: 6px; }
 .rubric input { flex: none; }
-.mock-summary ol { margin: 15px 0 0; padding-left: 1.4rem; }
-.mock-summary li + li { margin-top: 10px; }
+.mock-history { margin-top: 28px; }
+.mock-history ul { list-style: none; padding: 0; }
+.study-links { margin: 12px 0 16px; padding-left: 1.4rem; line-height: 1.55; overflow-wrap: anywhere; }
+.study-links > li + li { margin-top: 12px; }
+.study-links ul { padding-left: 1.25rem; margin-top: 4px; }
+.study-links p { margin: .3rem 0 0; color: var(--muted); }
+.review-status:empty { margin: 0; }
 .mock-score { margin: 13px 0 6px; font-size: 2rem; color: var(--green); font-weight: 800; }
+.lab-card { line-height: 1.55; }
+.lab-card h2:not(:first-child) { margin-top: 24px; }
+.lab-card summary { cursor: pointer; padding-block: 7px; color: var(--green); font-weight: 700; }
+.lab-card ol { padding-left: 1.4rem; }
+.lab-card li + li { margin-top: 6px; }
+.lab-card .lab-source { margin: 18px 0 0; }
 footer { border-top: 1px solid var(--line); padding: 20px 32px; display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .85rem; }
 .noscript { margin: 30px; }
 @media (max-width: 760px) {
@@ -115,6 +129,7 @@ footer { border-top: 1px solid var(--line); padding: 20px 32px; display: flex; j
   .sidebar { display: none; }
   .study, .mock-workspace { padding: 30px 18px 36px; }
   .intro { margin-block: 12px 18px; }
+  .quick-actions { margin-bottom: 9px; }
   .mobile-only { display: block; }
   .filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .search-field, #mobile-review { grid-column: 1 / -1; }

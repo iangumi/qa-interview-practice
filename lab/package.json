@@ -1,0 +1,13 @@
+{
+  "name": "qa-practice-flaky-save-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "starter": "playwright test starter.spec.js",
+    "solution": "playwright test solution.spec.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1"
+  }
+}

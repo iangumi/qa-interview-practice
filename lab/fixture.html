@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile settings</title>
+<h1>Profile settings</h1>
+<form aria-label="Profile" data-delay="650">
+  <button type="submit">Save profile</button>
+  <p role="status">Ready</p>
+</form>
+<script>
+  const form = document.querySelector("form");
+  const status = form.querySelector("[role=status]");
+  const save = form.querySelector("button");
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    save.disabled = true;
+    status.textContent = "Saving…";
+    setTimeout(() => {
+      status.textContent = "Profile saved";
+      save.disabled = false;
+    }, Number(form.dataset.delay));
+  });
+</script>
+</html>
