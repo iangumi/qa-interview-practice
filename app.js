@@ -1,8 +1,7 @@
 import { questions, topics, tracks, mocks, references } from "./bank.js";
 import { relatedGroups, shortAnswers } from "./answer-guide.js";
 import { guidedAnswers } from "./guided-answers.js";
-import { reportRoles } from "./radar-groups.js";
-import { initRadar, radarWidget, paintVote, rankQuestions, radarCount, radarMessage, setRadarRole } from "./radar-ui.js";
+import { initRadar, radarWidget, paintVote, recentQuestions, radarDate, radarMessage } from "./radar-ui.js";
 
 const el = id => document.getElementById(id);
 const questionLabel = id => "Q" + String(id).padStart(3, "0");
@@ -317,13 +316,9 @@ function matchesSearch(question, query) {
 }
 
 const browseFilters = ["browse-search", "browse-track", "browse-topic", "browse-status"];
-el("radar-role").append(...reportRoles.map(([value, label]) => option(value, label)));
-el("radar-role").addEventListener("change", event => setRadarRole(event.target.value));
 for (const id of browseFilters) el(id).addEventListener(id === "browse-search" ? "input" : "change", renderBrowse);
 el("browse-clear").addEventListener("click", () => {
   for (const id of browseFilters) el(id).value = id === "browse-track" ? "all" : "";
-  el("radar-role").value = "";
-  setRadarRole("");
   renderBrowse();
   el("browse-search").focus();
 });
@@ -341,7 +336,7 @@ function filteredBrowseQuestions() {
   );
 }
 
-function makeBrowseList(matches, role) {
+function makeBrowseList(matches) {
   const list = element("ul");
   for (const question of matches) {
     const row = element("li");
@@ -350,19 +345,18 @@ function makeBrowseList(matches, role) {
     link.prepend(element("span", questionLabel(question.id) + " ", "browse-id"));
     const content = element("div");
     content.append(link, element("span", mark < 0 ? "Unseen" : grades[mark], "browse-mark"));
-    row.append(content, radarWidget(question.id, role));
+    row.append(content, radarWidget(question.id));
     list.append(row);
   }
   return list;
 }
 
-const radarMode = () => location.hash === "#radar-recent" ? "recent" : location.hash === "#radar-top" ? "top" : "";
+const radarMode = () => location.hash === "#radar-recent";
 
 function renderBrowse() {
-  const role = el("radar-role").value;
   const mode = radarMode();
   const filtered = filteredBrowseQuestions();
-  const results = mode ? rankQuestions(filtered, mode, role) : filtered;
+  const results = mode ? recentQuestions(filtered) : filtered;
   const focusedVote = document.activeElement?.closest("#browse-results [data-radar-question]")?.dataset.radarQuestion;
   for (const link of document.querySelectorAll(".radar-switch a")) {
     if (link.hash === location.hash) link.setAttribute("aria-current", "page");
@@ -372,11 +366,11 @@ function renderBrowse() {
   el("browse-radar-practise").hidden = !mode || !results.length;
   el("browse-count").textContent = results.length + (results.length === 1 ? " question" : " questions");
   const groups = [];
-  const sections = mode ? [[mode === "top" ? "Most reported" : "Recently reported", results]] :
+  const sections = mode ? [["Questions I’ve been asked", results]] :
     topics.map(name => [name, results.filter(question => question.topic === name)]);
   for (const [name, matches] of sections.filter(([, rows]) => rows.length)) {
     const group = element("section", undefined, "browse-group");
-    group.append(element("h2", name), makeBrowseList(matches, role));
+    group.append(element("h2", name), makeBrowseList(matches));
     groups.push(group);
   }
   el("browse-results").replaceChildren(...(groups.length ? groups : [
@@ -396,16 +390,16 @@ function practiseRadar(questions) {
 }
 
 el("browse-radar-practise").addEventListener("click", () => practiseRadar(
-  rankQuestions(filteredBrowseQuestions(), radarMode(), el("radar-role").value)
+  recentQuestions(filteredBrowseQuestions())
 ));
-el("home-radar-practise").addEventListener("click", () => practiseRadar(rankQuestions(questions, "top")));
+el("home-radar-practise").addEventListener("click", () => practiseRadar(recentQuestions(questions)));
 
 function renderRadarHome() {
-  const top = rankQuestions(questions, "top").slice(0, 5);
+  const top = recentQuestions(questions).slice(0, 5);
   const list = element("ol", undefined, "study-links");
   for (const question of top) {
     const row = element("li");
-    row.append(studyLink(question.id), element("small", radarCount(question.id), "radar-note"));
+    row.append(studyLink(question.id), element("small", radarDate(question.id), "radar-note"));
     list.append(row);
   }
   el("home-radar-results").replaceChildren(top.length ? list : element("p", radarMessage(), "radar-note"));
@@ -994,12 +988,13 @@ function renderReadiness() {
 }
 
 function followLocation(focus = false) {
+  if (location.hash === "#radar-top") history.replaceState(null, "", "#radar-recent");
   const route = location.hash;
   const homeMode = route === "" || route === "#home";
   const mockMode = route === "#mocks";
   const labPanel = { "#lab": "flaky", "#lab-api": "api", "#lab-manual": "manual", "#lab-sql": "sql" }[route];
   const progressMode = route === "#progress";
-  const browseMode = ["#browse", "#radar-top", "#radar-recent"].includes(route);
+  const browseMode = ["#browse", "#radar-recent"].includes(route);
   const qMatch = route.match(/^#q-(\d+)$/);
   const startTrack = route.startsWith("#start-") && tracks.find(track => track.id === route.slice(7));
   const returning = route === "#resume" && resumeTrack();

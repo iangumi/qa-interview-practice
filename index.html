@@ -36,11 +36,10 @@
       <p class="resume-detail" id="resume-detail" hidden></p>
       <section class="radar-panel question-card" aria-labelledby="home-radar-heading">
         <h2 id="home-radar-heading">🎯 Interview Radar</h2>
-        <p>See which questions people reported from real interviews.</p>
+        <p>Save questions you’ve been asked and practise them again. Your list stays in this browser.</p>
         <div id="home-radar-results"></div>
         <div class="radar-links">
-          <a href="#radar-top">🔥 Most reported</a>
-          <a href="#radar-recent">Recently reported</a>
+          <a href="#radar-recent">🕒 Questions I’ve been asked</a>
           <button id="home-radar-practise" class="primary" type="button" hidden>Practise these</button>
         </div>
       </section>
@@ -98,8 +97,7 @@
       <p class="intro">Find questions by topic, study path, or review status.</p>
       <div class="radar-switch" aria-label="Browse view">
         <a href="#browse">All questions</a>
-        <a href="#radar-recent">🕒 Recently reported</a>
-        <a href="#radar-top">🔥 Most reported</a>
+        <a href="#radar-recent">🕒 Questions I’ve been asked</a>
       </div>
       <div class="filters browse-filters" aria-label="Browse filters">
         <label>Search <input id="browse-search" type="search" placeholder="Topic or Q071"></label>
@@ -115,12 +113,9 @@
         </select></label>
       </div>
       <div class="radar-controls">
-        <label>Interview role <select id="radar-role"><option value="">All roles</option></select></label>
         <button id="browse-radar-practise" class="primary" type="button" hidden>Practise these</button>
-        <button id="radar-logout" class="text-button" type="button" hidden>Sign out of Radar</button>
-        <button id="radar-retry" class="text-button" type="button" hidden>Retry loading reports</button>
       </div>
-      <p id="radar-browse-note" class="radar-note" hidden>Rankings use distinct community reports from the past 90 days.</p>
+      <p id="radar-browse-note" class="radar-note" hidden>Your most recently marked questions appear first. This list is saved in your browser.</p>
       <div class="browse-count"><p id="browse-count" role="status"></p><button id="browse-clear" type="button" class="text-button">Clear filters</button></div>
       <div id="browse-results"></div>
     </section>
@@ -265,31 +260,6 @@ Received: "Saving…"
     </section>
     <noscript><p class="noscript">Enable JavaScript to open the practice questions and mock interviews.</p></noscript>
   </main>
-  <dialog id="radar-dialog" aria-labelledby="radar-dialog-title">
-    <div class="radar-dialog-heading">
-      <h2 id="radar-dialog-title">Interview Radar</h2>
-      <button id="radar-close" type="button">Close</button>
-    </div>
-    <form id="radar-report-form" hidden>
-      <p id="radar-report-context"></p>
-      <div id="radar-report-inputs">
-        <label class="radar-check"><input id="radar-recent-check" type="checkbox" required> I encountered this in a real interview in the past 90 days.</label>
-        <label>Interview role (optional) <select id="radar-report-role"><option value="">Prefer not to say</option></select></label>
-        <p>Public rankings show aggregate counts. Your email stays with the sign-in service.</p>
-      </div>
-      <button id="radar-submit-report" class="primary" type="submit">Report question</button>
-    </form>
-    <form id="radar-email-form" hidden>
-      <p>Sign in by email to submit one report per question. You can undo it from any device you sign in on.</p>
-      <label>Email <input id="radar-email" type="email" autocomplete="email" required maxlength="254"></label>
-      <button class="primary" type="submit">Send sign-in link</button>
-    </form>
-    <form id="radar-confirm-form" hidden>
-      <p>Confirm sign-in to report questions and manage your previous reports.</p>
-      <button class="primary" type="submit">Confirm sign-in</button>
-    </form>
-    <p id="radar-dialog-status" role="status"></p>
-  </dialog>
   <p id="radar-announcement" class="sr-only" role="status"></p>
   <footer>QA Interview Practice <a href="https://github.com/iangumi/qa-interview-practice/issues">Suggest an improvement on GitHub ↗</a></footer>
 </body>
