@@ -97,9 +97,9 @@ export function paintInterviewButton(container) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "interview-save";
-  button.textContent = saved ? "✓ Saved" : "🎯 Came up?";
+  button.textContent = saved ? "✓ Saved" : "Save Question";
   button.setAttribute("aria-pressed", String(saved));
-  button.setAttribute("aria-label", (saved ? "Saved. Remove" : "Came up? Save") + " question Q" + String(id).padStart(3, "0"));
+  button.setAttribute("aria-label", (saved ? "Saved. Remove question" : "Save Question") + " Q" + String(id).padStart(3, "0"));
   button.title = saved ? "Remove from active interview" : "Save to active interview";
   button.addEventListener("click", () => toggleQuestion(id, button));
   container.replaceChildren(button);

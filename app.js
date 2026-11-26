@@ -358,7 +358,7 @@ function renderBrowse() {
   const session = activeInterview();
   el("browse-interview-hint").textContent = session
     ? "Saving to " + session.name + ". Tap ✓ Saved to undo."
-    : "Tap “Came up?” to save a question to an interview.";
+    : "Use “Save Question” to add a question to an interview.";
   el("browse-count").textContent = results.length + (results.length === 1 ? " question" : " questions");
   const groups = [];
   for (const name of topics) {
@@ -398,7 +398,7 @@ function renderInterviews() {
   el("interview-select-label").hidden = !sessions.length;
   const panel = el("interview-session");
   if (!session) {
-    panel.replaceChildren(element("p", "Create a session, then use Came up? in Browse or on any question."));
+    panel.replaceChildren(element("p", "Create a session, then use “Save Question” in Browse or on any question."));
     return;
   }
   const card = element("article", undefined, "question-card interview-card");
