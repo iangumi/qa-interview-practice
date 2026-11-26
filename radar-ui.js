@@ -62,21 +62,24 @@ export function paintVote(container) {
   const vote = document.createElement("button");
   vote.type = "button";
   vote.className = "radar-vote";
-  vote.textContent = marked ? "🎯 On my Radar · Undo" : "🎯 I got asked this!";
+  const compact = container.classList.contains("radar-compact");
+  const label = marked ? "On my Radar · Undo" : "I got asked this!";
+  vote.textContent = compact ? (marked ? "✓" : "◎") : "🎯 " + label;
+  vote.title = label;
   vote.setAttribute("aria-pressed", String(marked));
-  vote.setAttribute("aria-label", vote.textContent + " · Q" + String(id).padStart(3, "0"));
+  vote.setAttribute("aria-label", (compact ? "" : "🎯 ") + label + " · Q" + String(id).padStart(3, "0"));
   vote.addEventListener("click", () => toggle(id, vote));
   container.replaceChildren(vote);
-  if (marked) {
+  if (marked && !compact) {
     const caption = document.createElement("small");
     caption.textContent = radarDate(id);
     container.append(caption);
   }
 }
 
-export function radarWidget(id) {
+export function radarWidget(id, compact = false) {
   const node = document.createElement("div");
-  node.className = "radar-widget";
+  node.className = compact ? "radar-widget radar-compact" : "radar-widget";
   node.dataset.radarQuestion = id;
   paintVote(node);
   return node;

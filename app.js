@@ -345,7 +345,7 @@ function makeBrowseList(matches) {
     link.prepend(element("span", questionLabel(question.id) + " ", "browse-id"));
     const content = element("div");
     content.append(link, element("span", mark < 0 ? "Unseen" : grades[mark], "browse-mark"));
-    row.append(content, radarWidget(question.id));
+    row.append(content, radarWidget(question.id, true));
     list.append(row);
   }
   return list;
@@ -362,7 +362,9 @@ function renderBrowse() {
     if (link.hash === location.hash) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   }
-  el("radar-browse-note").hidden = !mode;
+  el("radar-browse-note").textContent = mode
+    ? "Most recently marked first. Tap a checkmark to undo."
+    : "Tap the target beside any question you’ve been asked.";
   el("browse-radar-practise").hidden = !mode || !results.length;
   el("browse-count").textContent = results.length + (results.length === 1 ? " question" : " questions");
   const groups = [];
