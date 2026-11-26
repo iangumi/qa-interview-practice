@@ -18,6 +18,7 @@ An interactive study companion for QA and SDET interviews. It includes 161 quest
 - [Run the SQL checkout lab](lab/sql/) to reconcile orders, payment attempts, and API responses in SQLite.
 - Use Progress to see self-ratings by topic, first and latest mock scores, and a suggested next task.
 - Study progress and completed mock scores are saved in the current browser.
+- Interview Radar adds community-reported questions, recent and most-reported views, and practice from the rankings. [Backend setup](radar/README.md)
 
 ## Run locally
 

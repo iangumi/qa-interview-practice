@@ -199,3 +199,36 @@ footer { border-top: 1px solid var(--line); padding: 20px 32px; display: flex; j
   .mock-option { align-items: flex-start; flex-direction: column; }
   .browse-group li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 }
+
+.radar-panel { margin-top: 22px; background: #f3f8ee; border-color: #b9ccb8; }
+.home-panel .radar-panel h2 { margin: 0; }
+.radar-links, .radar-switch, .radar-controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.radar-switch { margin-bottom: 14px; }
+.radar-controls { margin-top: 12px; }
+.radar-controls label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.radar-switch a { padding: 8px 11px; border: 1px solid var(--line); border-radius: 8px; text-decoration: none; }
+.radar-switch a[aria-current="page"] { background: var(--green-soft); border-color: #a7bfa1; font-weight: 700; }
+.radar-note, .radar-widget small { color: var(--muted); font-size: .88rem; }
+.radar-panel .study-links small, .browse-mark { display: block; margin-top: 4px; }
+.radar-widget { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 14px; }
+.browse-group .radar-widget { margin: 0; display: grid; justify-items: start; }
+.radar-vote { font-size: .89rem; color: var(--green-dark); font-weight: 700; background: #eaf3e6; padding: 6px 10px; }
+.radar-vote:disabled { opacity: .75; }
+.radar-hit .radar-vote { animation: radar-hit .42s ease-out; }
+@keyframes radar-hit {
+  45% { transform: scale(1.07); background-color: #c4e5ae; }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-hit .radar-vote { animation: none; }
+}
+#radar-dialog { width: min(92%, 480px); max-height: calc(100dvh - 24px); padding: 20px; background: var(--white); border: 1px solid var(--line); border-radius: 14px; color: var(--ink); }
+#radar-dialog::backdrop { background: #17231d77; }
+.radar-dialog-heading { display: flex; gap: 10px; justify-content: space-between; align-items: center; }
+.radar-dialog-heading h2 { margin: 0; font-size: 1.3rem; }
+#radar-dialog label { display: grid; gap: 6px; margin: 10px 0; }
+#radar-dialog .radar-check { grid-template-columns: auto minmax(0, 1fr); align-items: baseline; }
+#radar-dialog-status:empty { display: none; }
+@media (max-width: 560px) {
+  .browse-group li { grid-template-columns: minmax(0, 1fr); }
+}

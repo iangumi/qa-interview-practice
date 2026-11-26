@@ -1,6 +1,8 @@
 import { questions, topics, tracks, mocks, references } from "./bank.js";
 import { relatedGroups, shortAnswers } from "./answer-guide.js";
 import { guidedAnswers } from "./guided-answers.js";
+import { reportRoles } from "./radar-groups.js";
+import { initRadar, radarWidget, paintVote, rankQuestions, radarCount, radarMessage, setRadarRole } from "./radar-ui.js";
 
 const el = id => document.getElementById(id);
 const questionLabel = id => "Q" + String(id).padStart(3, "0");
@@ -189,8 +191,12 @@ function startQuickPractice() {
     el("quick-empty").textContent = "You’re caught up on this path. Browse the questions or choose another path.";
     return;
   }
+  openQuickSession(ids);
+}
+
+function openQuickSession(ids, label = selectedTrack.name) {
   el("quick-empty").textContent = "";
-  quickSession = { ids, grades: new Map(), previousId: currentId, finished: false };
+  quickSession = { ids, label, grades: new Map(), previousId: currentId, finished: false };
   if (location.hash.startsWith("#q-")) history.replaceState(null, "", "#practice");
   currentId = ids[0];
   updateFilters();
@@ -242,7 +248,7 @@ function renderQuickControls() {
   el("start-quick").hidden = active;
   el("finish-quick").hidden = !active || quickSession.finished;
   el("quick-status").hidden = !active;
-  el("quick-status").textContent = active ? "10-minute practice · " + selectedTrack.name : "";
+  el("quick-status").textContent = active ? "10-minute practice · " + quickSession.label : "";
   el("filters").hidden = active;
   el("result-bar").hidden = active && quickSession.finished;
   for (const control of el("tracks").children) control.disabled = active;
@@ -311,45 +317,99 @@ function matchesSearch(question, query) {
 }
 
 const browseFilters = ["browse-search", "browse-track", "browse-topic", "browse-status"];
+el("radar-role").append(...reportRoles.map(([value, label]) => option(value, label)));
+el("radar-role").addEventListener("change", event => setRadarRole(event.target.value));
 for (const id of browseFilters) el(id).addEventListener(id === "browse-search" ? "input" : "change", renderBrowse);
 el("browse-clear").addEventListener("click", () => {
   for (const id of browseFilters) el(id).value = id === "browse-track" ? "all" : "";
+  el("radar-role").value = "";
+  setRadarRole("");
   renderBrowse();
   el("browse-search").focus();
 });
 
-function renderBrowse() {
+function filteredBrowseQuestions() {
   const track = tracks.find(track => track.id === el("browse-track").value);
   const topic = el("browse-topic").value;
   const status = el("browse-status").value;
   const query = el("browse-search").value;
-  const results = questions.filter(question =>
+  return questions.filter(question =>
     (!track?.numbers || track.numbers.includes(question.id)) &&
     (!topic || question.topic === topic) &&
     (!status || (status === "due" ? isDue(question.id) : (progress[question.id] ?? "new") === status)) &&
     matchesSearch(question, query)
   );
+}
+
+function makeBrowseList(matches, role) {
+  const list = element("ul");
+  for (const question of matches) {
+    const row = element("li");
+    const mark = gradeValues.indexOf(progress[question.id]);
+    const link = studyLink(question.id);
+    link.prepend(element("span", questionLabel(question.id) + " ", "browse-id"));
+    const content = element("div");
+    content.append(link, element("span", mark < 0 ? "Unseen" : grades[mark], "browse-mark"));
+    row.append(content, radarWidget(question.id, role));
+    list.append(row);
+  }
+  return list;
+}
+
+const radarMode = () => location.hash === "#radar-recent" ? "recent" : location.hash === "#radar-top" ? "top" : "";
+
+function renderBrowse() {
+  const role = el("radar-role").value;
+  const mode = radarMode();
+  const filtered = filteredBrowseQuestions();
+  const results = mode ? rankQuestions(filtered, mode, role) : filtered;
+  const focusedVote = document.activeElement?.closest("#browse-results [data-radar-question]")?.dataset.radarQuestion;
+  for (const link of document.querySelectorAll(".radar-switch a")) {
+    if (link.hash === location.hash) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  }
+  el("radar-browse-note").hidden = !mode;
+  el("browse-radar-practise").hidden = !mode || !results.length;
   el("browse-count").textContent = results.length + (results.length === 1 ? " question" : " questions");
   const groups = [];
-  for (const name of topics) {
-    const matches = results.filter(question => question.topic === name);
-    if (!matches.length) continue;
+  const sections = mode ? [[mode === "top" ? "Most reported" : "Recently reported", results]] :
+    topics.map(name => [name, results.filter(question => question.topic === name)]);
+  for (const [name, matches] of sections.filter(([, rows]) => rows.length)) {
     const group = element("section", undefined, "browse-group");
-    const list = element("ul");
-    for (const question of matches) {
-      const row = element("li");
-      const mark = gradeValues.indexOf(progress[question.id]);
-      const link = studyLink(question.id);
-      link.prepend(element("span", questionLabel(question.id) + " ", "browse-id"));
-      row.append(link, element("span", mark < 0 ? "Unseen" : grades[mark], "browse-mark"));
-      list.append(row);
-    }
-    group.append(element("h2", name), list);
+    group.append(element("h2", name), makeBrowseList(matches, role));
     groups.push(group);
   }
   el("browse-results").replaceChildren(...(groups.length ? groups : [
-    element("p", "No questions match these filters. Try a different search or clear the filters."),
+    element("p", mode && filtered.length ? radarMessage() : "No questions match these filters. Try a different search or clear the filters."),
   ]));
+  if (focusedVote) {
+    el("browse-results").querySelector(`[data-radar-question="${focusedVote}"] button`)?.focus({ preventScroll: true });
+  }
+}
+
+function practiseRadar(questions) {
+  if (!questions.length) return;
+  history.pushState(null, "", "#practice");
+  selectTrack(tracks[0]);
+  followLocation();
+  openQuickSession(questions.slice(0, 5).map(question => question.id), "Interview Radar");
+}
+
+el("browse-radar-practise").addEventListener("click", () => practiseRadar(
+  rankQuestions(filteredBrowseQuestions(), radarMode(), el("radar-role").value)
+));
+el("home-radar-practise").addEventListener("click", () => practiseRadar(rankQuestions(questions, "top")));
+
+function renderRadarHome() {
+  const top = rankQuestions(questions, "top").slice(0, 5);
+  const list = element("ol", undefined, "study-links");
+  for (const question of top) {
+    const row = element("li");
+    row.append(studyLink(question.id), element("small", radarCount(question.id), "radar-note"));
+    list.append(row);
+  }
+  el("home-radar-results").replaceChildren(top.length ? list : element("p", radarMessage(), "radar-note"));
+  el("home-radar-practise").hidden = !top.length;
 }
 
 function appendAnswerBlocks(target, blocks) {
@@ -517,7 +577,7 @@ function renderQuestion(focus = false) {
   const answer = element("div", undefined, "answer");
   answer.id = "answer-content";
   answer.hidden = !answerVisible;
-  questionCard.replaceChildren(meta, heading, reveal, answer);
+  questionCard.replaceChildren(meta, heading, radarWidget(question.id), reveal, answer);
   if (guidedAnswers[question.id]) questionCard.append(renderGuidedQuestion(question.id));
   if (answerVisible) {
     renderAnswer(question, answer);
@@ -835,6 +895,7 @@ function resumeTrack() {
 }
 
 function renderHome() {
+  renderRadarHome();
   const track = resumeTrack();
   el("continue-study").hidden = !track;
   el("resume-detail").hidden = !track;
@@ -938,7 +999,7 @@ function followLocation(focus = false) {
   const mockMode = route === "#mocks";
   const labPanel = { "#lab": "flaky", "#lab-api": "api", "#lab-manual": "manual", "#lab-sql": "sql" }[route];
   const progressMode = route === "#progress";
-  const browseMode = route === "#browse";
+  const browseMode = ["#browse", "#radar-top", "#radar-recent"].includes(route);
   const qMatch = route.match(/^#q-(\d+)$/);
   const startTrack = route.startsWith("#start-") && tracks.find(track => track.id === route.slice(7));
   const returning = route === "#resume" && resumeTrack();
@@ -1017,4 +1078,14 @@ document.querySelector(".skip-link").addEventListener("click", event => {
 });
 window.addEventListener("hashchange", () => followLocation(true));
 updateFilters();
+initRadar(() => {
+  renderRadarHome();
+  if (!el("browse-panel").hidden) renderBrowse();
+  const widget = questionCard.querySelector("[data-radar-question]");
+  if (widget) {
+    const focused = widget.contains(document.activeElement);
+    paintVote(widget);
+    if (focused) widget.querySelector("button")?.focus({ preventScroll: true });
+  }
+});
 followLocation();
