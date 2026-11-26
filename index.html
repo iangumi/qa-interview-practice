@@ -115,11 +115,12 @@
     </section>
     <section id="lab-panel" class="mock-workspace" aria-labelledby="labs-heading" hidden>
       <h1 id="labs-heading">Hands-on QA labs</h1>
-      <p class="intro">Practise diagnosing a flaky test, checking API side effects, or making a release recommendation.</p>
+      <p class="intro">Diagnose a flaky test, verify API and database records, or make a checkout release recommendation.</p>
       <div class="lab-switch" aria-label="Choose a lab">
         <a href="#lab">Flaky save test</a>
         <a href="#lab-api">API validation</a>
         <a href="#lab-manual">Manual QA case</a>
+        <a href="#lab-sql">SQL &amp; database testing</a>
       </div>
       <div id="lab-flaky-panel">
       <h2 id="lab-heading">Debug a flaky save test</h2>
@@ -208,6 +209,35 @@ Received: "Saving…"
             <p>I’d recommend holding the retry change or keeping it disabled until we verify the late-approval case because a delayed first response could lead to duplicate charges. I’d ask the release owner to revisit that decision after the sandbox shows one charge and one order for the original checkout.</p>
             <p>Automate the duplicate-charge check at the service boundary with a controlled payment sandbox. Keep a UI check for whether the retry controls and status messages make sense to the customer.</p>
           </details>
+        </article>
+      </div>
+      <div id="lab-sql-panel" hidden>
+        <h2 id="lab-sql-heading">Reconcile checkout records with SQL</h2>
+        <article class="question-card lab-card">
+          <p>The checkout flow allows one captured payment per order. An HTTP 201 response must reference a stored order. Query an SQLite fixture with orders, payment attempts, and an independent snapshot of API responses.</p>
+          <h3>Your deliverable</h3>
+          <ol>
+            <li>Find confirmed orders with no captured payment, including orders with only declined attempts.</li>
+            <li>Find duplicate captures, then identify orders with one capture whose amount differs from the order total.</li>
+            <li>Return the latest payment attempt for each order with payment activity. Break timestamp ties by payment ID.</li>
+            <li>Find successful create responses that reference missing orders. Record the expected rule and the rows that violate it.</li>
+          </ol>
+          <details>
+            <summary>Hints</summary>
+            <p>Use an anti-join or <code>NOT EXISTS</code> for missing records. Group captured payments before checking counts and amounts. Use <code>ROW_NUMBER()</code> partitioned by order for the latest attempt.</p>
+          </details>
+          <details>
+            <summary>Expected results</summary>
+            <ul>
+              <li>Order 102 has no capture. Its only payment attempt was declined.</li>
+              <li>Order 103 has two captures.</li>
+              <li>Order 104 has a single Rp115,000 capture against a Rp120,000 order.</li>
+              <li>Latest attempt IDs in order ID order are 201, 208, 203, 204, 205, and 207.</li>
+              <li>Request <code>req-02</code> returned 201 for order 108, which is absent.</li>
+            </ul>
+          </details>
+          <p class="lab-source"><a href="https://github.com/iangumi/qa-interview-practice/tree/main/lab/sql">Run the SQLite fixture, starter, and solution</a></p>
+          <p>Practise the same checkout flow from the <a href="#lab-api">API testing</a> and <a href="#lab-manual">manual QA</a> perspectives.</p>
         </article>
       </div>
     </section>

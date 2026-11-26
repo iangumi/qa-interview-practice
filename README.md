@@ -2,7 +2,7 @@
 
 [Open the practice site](https://iangumi.github.io/qa-interview-practice/)
 
-An interactive study companion for QA and SDET interviews. It includes 149 questions and answers, a QA Fundamentals path, three role-based paths, a 25-question core set, and three scored mock interviews.
+An interactive study companion for QA and SDET interviews. It includes 161 questions and answers, QA Fundamentals and SQL & Database Testing paths, three role-based paths, a 25-question core set, and three scored mock interviews.
 
 - Browse questions by topic and filter by study path, review status, or search term.
 - Reveal answers after attempting them. Mark questions as understood, needing review, or skipped.
@@ -15,6 +15,7 @@ An interactive study companion for QA and SDET interviews. It includes 149 quest
 - Revisit completed mock scores and add questions with missed rubric items to review.
 - [Run the flaky save lab](lab/) with a starter test and reference solution.
 - [Run the API persistence lab](lab/api/) or practise a manual checkout release case on the site.
+- [Run the SQL checkout lab](lab/sql/) to reconcile orders, payment attempts, and API responses in SQLite.
 - Use Progress to see self-ratings by topic, first and latest mock scores, and a suggested next task.
 - Study progress and completed mock scores are saved in the current browser.
 

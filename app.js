@@ -78,6 +78,7 @@ const questionCard = el("question");
 const mockContent = el("mock-content");
 const pathDescriptions = {
   fundamentals: "Test design, exploratory testing, API validation, and release decisions.",
+  sql: "SQL queries, database checks, and checkout reconciliation.",
   junior: "Testing essentials, browser basics, and your first automation checks.",
   sdet: "Automation frameworks, Playwright, API testing, and CI.",
   lead: "Test strategy, release risk, and decisions about automation.",
@@ -935,7 +936,7 @@ function followLocation(focus = false) {
   const route = location.hash;
   const homeMode = route === "" || route === "#home";
   const mockMode = route === "#mocks";
-  const labPanel = { "#lab": "flaky", "#lab-api": "api", "#lab-manual": "manual" }[route];
+  const labPanel = { "#lab": "flaky", "#lab-api": "api", "#lab-manual": "manual", "#lab-sql": "sql" }[route];
   const progressMode = route === "#progress";
   const browseMode = route === "#browse";
   const qMatch = route.match(/^#q-(\d+)$/);
@@ -977,7 +978,7 @@ function followLocation(focus = false) {
       el("progress-page-heading").focus();
     }
   } else if (labPanel) {
-    for (const id of ["flaky", "api", "manual"]) el("lab-" + id + "-panel").hidden = id !== labPanel;
+    for (const id of ["flaky", "api", "manual", "sql"]) el("lab-" + id + "-panel").hidden = id !== labPanel;
     for (const link of el("lab-panel").querySelectorAll(".lab-switch a")) {
       if (link.hash === route) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");

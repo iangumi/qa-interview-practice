@@ -1593,6 +1593,153 @@ export const questions = [
         "text": "If duplicate charges are still possible and rollback takes hours, recommend holding the release. If the remaining gap is low impact and the feature can be disabled quickly, explain the conditions under which release could proceed and how the team will monitor it."
       }
     ]
+  },
+  {
+    "id": 150,
+    "topic": "SQL & Database Testing",
+    "prompt": "How do you use SELECT, WHERE, and ORDER BY to check checkout records?",
+    "answer": [
+      {
+        "text": "First choose the columns you need, filter the relevant records, and sort the result for predictable comparison. This query returns confirmed orders at or above Rp90,000."
+      },
+      {
+        "code": "SELECT order_id, total_idr\nFROM orders\nWHERE status = 'CONFIRMED' AND total_idr >= 90000\nORDER BY total_idr DESC, order_id;"
+      }
+    ]
+  },
+  {
+    "id": 151,
+    "topic": "SQL & Database Testing",
+    "prompt": "When would you use INNER JOIN or LEFT JOIN in a database test?",
+    "answer": [
+      {
+        "text": "An INNER JOIN returns rows with matching records on both sides. A LEFT JOIN keeps every order and shows NULL values for payment columns if the order has no matching capture. Put the capture filter in the join condition so the missing matches stay visible."
+      },
+      {
+        "code": "SELECT o.order_id, p.payment_id\nFROM orders AS o\nLEFT JOIN payments AS p\n  ON p.order_id = o.order_id AND p.status = 'CAPTURED'\nORDER BY o.order_id, p.payment_id;"
+      }
+    ]
+  },
+  {
+    "id": 152,
+    "topic": "SQL & Database Testing",
+    "prompt": "Write a SQL query to find confirmed orders with no captured payment.",
+    "answer": [
+      {
+        "text": "Use a correlated NOT EXISTS subquery. A declined attempt leaves the order in the result because the subquery asks specifically for a captured payment."
+      },
+      {
+        "code": "SELECT o.order_id\nFROM orders AS o\nWHERE o.status = 'CONFIRMED'\n  AND NOT EXISTS (\n    SELECT 1 FROM payments AS p\n    WHERE p.order_id = o.order_id AND p.status = 'CAPTURED'\n  )\nORDER BY o.order_id;"
+      }
+    ]
+  },
+  {
+    "id": 153,
+    "topic": "SQL & Database Testing",
+    "prompt": "How do WHERE, GROUP BY, and HAVING help detect duplicate captures?",
+    "answer": [
+      {
+        "text": "WHERE keeps captured payments before grouping. GROUP BY collects those payments per order. HAVING keeps groups with more than one payment, which violates this checkout contract."
+      },
+      {
+        "code": "SELECT order_id, COUNT(*) AS capture_count\nFROM payments\nWHERE status = 'CAPTURED'\nGROUP BY order_id\nHAVING COUNT(*) > 1\nORDER BY order_id;"
+      }
+    ]
+  },
+  {
+    "id": 154,
+    "topic": "SQL & Database Testing",
+    "prompt": "How would you use a CTE to find a payment amount that disagrees with the order total?",
+    "answer": [
+      {
+        "text": "Aggregate captures to one row per order before comparing totals. Require one capture so this check isolates wrong amounts from duplicate or missing captures."
+      },
+      {
+        "code": "WITH captures AS (\n  SELECT order_id, COUNT(*) AS capture_count, SUM(amount_idr) AS captured_idr\n  FROM payments\n  WHERE status = 'CAPTURED'\n  GROUP BY order_id\n)\nSELECT o.order_id, o.total_idr, c.captured_idr\nFROM orders AS o\nJOIN captures AS c ON c.order_id = o.order_id\nWHERE c.capture_count = 1 AND c.captured_idr <> o.total_idr\nORDER BY o.order_id;"
+      }
+    ]
+  },
+  {
+    "id": 155,
+    "topic": "SQL & Database Testing",
+    "prompt": "Write a window function to return the latest payment attempt per order.",
+    "answer": [
+      {
+        "text": "ROW_NUMBER keeps individual attempts visible and numbers them within each order. Sort by timestamp and then by payment ID so the query chooses one row even when timestamps tie."
+      },
+      {
+        "code": "WITH ranked AS (\n  SELECT order_id, payment_id, status,\n         ROW_NUMBER() OVER (\n           PARTITION BY order_id ORDER BY recorded_at DESC, payment_id DESC\n         ) AS position\n  FROM payments\n)\nSELECT order_id, payment_id, status\nFROM ranked\nWHERE position = 1\nORDER BY order_id;"
+      }
+    ]
+  },
+  {
+    "id": 156,
+    "topic": "SQL & Database Testing",
+    "prompt": "How would you test SQL CRUD operations without leaving test data behind?",
+    "answer": [
+      {
+        "text": "Insert a known record, read back its fields, update one field and verify the change, then delete the record and check that it is absent. Use an isolated database and roll back the transaction to restore the fixture even if a check fails."
+      },
+      {
+        "code": "BEGIN;\nINSERT INTO orders VALUES (900, 99, 'PENDING', 1000);\nSELECT status, total_idr FROM orders WHERE order_id = 900;\nUPDATE orders SET status = 'CONFIRMED' WHERE order_id = 900;\nSELECT status FROM orders WHERE order_id = 900;\nDELETE FROM orders WHERE order_id = 900;\nSELECT COUNT(*) FROM orders WHERE order_id = 900;\nROLLBACK;"
+      }
+    ]
+  },
+  {
+    "id": 157,
+    "topic": "SQL & Database Testing",
+    "prompt": "Which database constraints would you test for orders and payments?",
+    "answer": [
+      {
+        "text": "Check that order IDs are unique, payment rows require an existing order, and required columns and amount rules reject invalid values. Verify that a rejected write leaves surrounding records intact. Enable foreign-key enforcement on the SQLite connection before running the test."
+      },
+      {
+        "code": "PRAGMA foreign_keys = ON;\nPRAGMA foreign_key_check;"
+      }
+    ]
+  },
+  {
+    "id": 158,
+    "topic": "SQL & Database Testing",
+    "prompt": "How would you verify that a failed checkout transaction does not leave a partial order?",
+    "answer": [
+      {
+        "text": "Create a repeatable failure between the writes whose contract requires all-or-nothing behaviour. Query the order and dependent records after rollback, using a separate read to verify committed state. For an external payment provider, also verify the agreed compensation or reconciliation behaviour because a database rollback cannot undo an external charge."
+      }
+    ]
+  },
+  {
+    "id": 159,
+    "topic": "SQL & Database Testing",
+    "prompt": "How can a one-to-many join give you a misleading aggregate?",
+    "answer": [
+      {
+        "text": "Joining orders to payment attempts repeats the order total once for every matched attempt. For order-level totals, compute from orders directly or aggregate payments to one row per order before joining. Check the intended row grain before choosing COUNT or SUM."
+      }
+    ]
+  },
+  {
+    "id": 160,
+    "topic": "SQL & Database Testing",
+    "prompt": "Write a SQL reconciliation query to find checkout requests that returned 201 but have no stored order.",
+    "answer": [
+      {
+        "text": "Treat the API responses as an independent snapshot. Join by the returned order ID, keep successful responses only, and report requests whose order row is missing. If the contract allows delayed writes, perform the check after the agreed visibility window."
+      },
+      {
+        "code": "SELECT r.request_id, r.returned_order_id\nFROM checkout_responses AS r\nLEFT JOIN orders AS o ON o.order_id = r.returned_order_id\nWHERE r.http_status = 201 AND o.order_id IS NULL\nORDER BY r.request_id;"
+      }
+    ]
+  },
+  {
+    "id": 161,
+    "topic": "SQL & Database Testing",
+    "prompt": "How would you test a database migration that changes how checkout totals are stored?",
+    "answer": [
+      {
+        "text": "Seed representative orders, apply the migration in a test environment, and compare row counts, identifiers, totals, and integrity constraints. Include nulls, boundaries, and any historical edge cases allowed by the old schema. Rehearse the recovery procedure and verify the migrated values through the API as well as SQL."
+      }
+    ]
   }
 ];
 
@@ -1616,7 +1763,8 @@ export const topics = [
   "CI/CD & Jenkins Integration",
   "Quality Assurance & Agile Methodology",
   "Emerging Technologies – AI & LLM Concepts",
-  "QA Fundamentals & Manual Testing"
+  "QA Fundamentals & Manual Testing",
+  "SQL & Database Testing"
 ];
 
 export const tracks = [
@@ -1746,6 +1894,24 @@ export const tracks = [
       136,
       108,
       139
+    ]
+  },
+  {
+    "id": "sql",
+    "name": "SQL & Database Testing",
+    "numbers": [
+      150,
+      151,
+      152,
+      153,
+      154,
+      155,
+      156,
+      157,
+      158,
+      159,
+      160,
+      161
     ]
   }
 ];
