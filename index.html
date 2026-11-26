@@ -21,6 +21,7 @@
         <a href="#mocks" id="nav-mocks">Mock interviews</a>
         <a href="#lab" id="nav-lab">QA labs</a>
         <a href="#progress" id="nav-progress">Progress</a>
+        <a href="#interviews" id="nav-interviews">My Interviews</a>
       </nav>
       <a class="repo-link" href="https://github.com/iangumi/qa-interview-practice">GitHub <span aria-hidden="true">↗</span></a>
     </div>
@@ -34,14 +35,10 @@
         <a id="home-due" href="#due" hidden></a>
       </div>
       <p class="resume-detail" id="resume-detail" hidden></p>
-      <section class="radar-panel question-card" aria-labelledby="home-radar-heading">
-        <h2 id="home-radar-heading">🎯 Interview Radar</h2>
-        <p>Save questions you’ve been asked and practise them again. Your list stays in this browser.</p>
-        <div id="home-radar-results"></div>
-        <div class="radar-links">
-          <a href="#radar-recent">🕒 Questions I’ve been asked</a>
-          <button id="home-radar-practise" class="primary" type="button" hidden>Practise these</button>
-        </div>
+      <section class="interview-home question-card" aria-labelledby="home-interviews-heading">
+        <h2 id="home-interviews-heading">🎯 My Interviews</h2>
+        <p id="home-interviews-summary">Save what came up in your interviews and revisit it later.</p>
+        <a href="#interviews">Open My Interviews</a>
       </section>
       <h2>Pick your study path</h2>
       <div class="home-paths" id="home-paths"></div>
@@ -95,10 +92,6 @@
     <section id="browse-panel" class="mock-workspace" aria-labelledby="browse-heading" hidden>
       <h1 id="browse-heading">Browse questions</h1>
       <p class="intro">Find questions by topic, study path, or review status.</p>
-      <div class="radar-switch" aria-label="Browse view">
-        <a href="#browse">All questions</a>
-        <a href="#radar-recent">🕒 Questions I’ve been asked</a>
-      </div>
       <div class="filters browse-filters" aria-label="Browse filters">
         <label>Search <input id="browse-search" type="search" placeholder="Topic or Q071"></label>
         <label>Study path <select id="browse-track"></select></label>
@@ -112,12 +105,18 @@
           <option value="skipped">Skipped</option>
         </select></label>
       </div>
-      <div class="radar-controls">
-        <button id="browse-radar-practise" class="primary" type="button" hidden>Practise these</button>
-      </div>
-      <p id="radar-browse-note" class="radar-note">Tap the target beside any question you’ve been asked.</p>
+      <p class="interview-hint" id="browse-interview-hint">Tap “Came up?” to save a question to an interview.</p>
       <div class="browse-count"><p id="browse-count" role="status"></p><button id="browse-clear" type="button" class="text-button">Clear filters</button></div>
       <div id="browse-results"></div>
+    </section>
+    <section id="interviews-panel" class="mock-workspace" aria-labelledby="interviews-heading" hidden>
+      <h1 id="interviews-heading">My Interviews</h1>
+      <p class="intro">Keep a list of what came up in each interview. Your sessions are saved in this browser.</p>
+      <div class="interview-toolbar">
+        <label id="interview-select-label" hidden>Active interview <select id="interview-select"></select></label>
+        <button id="interview-new" class="primary" type="button">New interview</button>
+      </div>
+      <div id="interview-session"></div>
     </section>
     <section id="mocks" class="mock-workspace" aria-labelledby="mock-heading" hidden>
       <h1 id="mock-heading">Mock interviews</h1>
@@ -260,7 +259,20 @@ Received: "Saving…"
     </section>
     <noscript><p class="noscript">Enable JavaScript to open the practice questions and mock interviews.</p></noscript>
   </main>
-  <p id="radar-announcement" class="sr-only" role="status"></p>
+  <dialog id="interview-dialog" class="interview-dialog" aria-labelledby="interview-dialog-heading">
+    <form id="interview-form">
+      <h2 id="interview-dialog-heading">New interview</h2>
+      <label>Session name <input name="title" required maxlength="90" placeholder="SDET screening"></label>
+      <label>Date <input name="date" type="date" required></label>
+      <label>Company (optional) <input name="company" maxlength="90"></label>
+      <div class="card-actions">
+        <button class="primary" type="submit">Create interview</button>
+        <button id="interview-cancel" type="button">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+  <p id="interview-announcement" class="sr-only" role="status"></p>
+  <section id="interview-print" aria-label="Interview export" hidden></section>
   <footer>QA Interview Practice <a href="https://github.com/iangumi/qa-interview-practice/issues">Suggest an improvement on GitHub ↗</a></footer>
 </body>
 </html>
